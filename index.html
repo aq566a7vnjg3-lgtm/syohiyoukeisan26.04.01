@@ -1,0 +1,1906 @@
+<!doctype html>
+<html lang="ja">
+<head><!-- Icons -->
+<link rel="icon" href="favicon.ico" sizes="any">
+<link rel="icon" type="image/png" href="favicon-32x32.png" sizes="32x32">
+<link rel="apple-touch-icon" href="apple-touch-icon.png" sizes="180x180">
+<link rel="manifest" href="site.webmanifest">
+
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
+<title>諸費用 自動計算（地域選択：HC奈良中央 / HC南京都）</title>
+<style>
+  :root{
+    --bg:#ffe4ee;
+    --card:#ffffff;
+    --border:#d5d9df;
+    --muted:#5b6470;
+    --head:#1f4fbf;
+    --chip:#eef2ff;
+    --sec:#f3f6ff;
+    --sub:#e8f1ff;
+  }
+  *{ box-sizing:border-box; }
+  body{
+    margin:0;
+    font-family: system-ui,-apple-system,"Segoe UI",Roboto,"Noto Sans JP",sans-serif;
+    background:var(--bg);
+    color:#111;
+    transition: background-color .2s ease;
+  }
+  .wrap{ max-width:980px; margin:14px auto 28px; padding:0 12px; }
+  .top{
+    display:flex; flex-wrap:wrap; gap:10px;
+    align-items:flex-start; justify-content:space-between;
+    margin-bottom:12px;
+  }
+  .btnRow{ display:flex; gap:10px; flex-wrap:wrap; }
+  .btn{
+    border:1px solid #b8bec9;
+    background:#fff;
+    padding:10px 12px;
+    border-radius:12px;
+    cursor:pointer;
+    font-weight:700;
+    min-height:42px;
+  }
+
+  .btnBig{
+    padding:12px 16px;
+    min-height:48px;
+    font-size:15px;
+    border-radius:14px;
+  }
+  .btnAccent{
+    background:#1f4fbf;
+    border-color:#1f4fbf;
+    color:#fff;
+  }
+
+  .hint{
+    font-size:12px; color:var(--muted);
+    line-height:1.4;
+    max-width:520px;
+  }
+
+  .grid{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:12px;
+  }
+  @media (min-width:720px){
+    .grid{ grid-template-columns:repeat(2,1fr); }
+    .span2{ grid-column:span 2; }
+  }
+
+  .card{
+    background:var(--card);
+    border:1px solid var(--border);
+    border-radius:16px;
+    padding:12px;
+    box-shadow:0 1px 0 rgba(0,0,0,.03);
+  }
+  .card h3{
+    margin:0 0 8px;
+    font-size:15px;
+    color:var(--head);
+    display:flex; gap:8px; align-items:center;
+  }
+  .chip{
+    background:var(--chip);
+    border:1px solid #d9ddff;
+    color:#2b35a6;
+    border-radius:999px;
+    padding:2px 8px;
+    font-size:12px;
+    font-weight:800;
+  }
+
+  .options{
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px;
+  }
+  @media (min-width:520px){
+    .options.cols2{ grid-template-columns:repeat(2,1fr); }
+    .options.cols3{ grid-template-columns:repeat(3,1fr); }
+  }
+
+  .opt{
+    position:relative;
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px 10px;
+    display:flex; gap:10px; align-items:center;
+    cursor:pointer;
+    background:#fff;
+    min-height:46px;
+  }
+  .opt input{ width:20px; height:20px; }
+  .opt span{ font-size:14px; font-weight:650; }
+  .opt small{ display:block; font-size:12px; color:var(--muted); font-weight:600; margin-top:2px; }
+  .opt:has(input:checked){
+    border-color:#7ea1ff;
+    box-shadow:0 0 0 3px rgba(126,161,255,.22);
+  }
+
+  .disabled{ opacity:.5; pointer-events:none; }
+  .noteSmall{ font-size:12px; color:var(--muted); margin-top:6px; line-height:1.4; }
+
+  .result{
+    margin-top:12px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:18px;
+    padding:12px;
+  }
+  .resultTop{
+    display:flex;
+    flex-wrap:wrap;
+    gap:8px 14px;
+    align-items:baseline;
+    justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .total{ font-size:20px; font-weight:900; }
+  .status{ font-size:13px; font-weight:750; }
+
+  /* Mobile-first: list-like */
+  .rows{ display:grid; gap:10px; }
+  .row{
+    border:1px solid var(--border);
+    border-radius:14px;
+    padding:10px;
+    background:#fff;
+  }
+  .row.sec{ background:var(--sec); font-weight:900; border-style:dashed; }
+  .row.sub{ background:var(--sub); font-weight:900; }
+  .rowHeader{
+    display:flex; justify-content:space-between; gap:10px; align-items:center;
+    margin-bottom:6px;
+  }
+  .label{ font-weight:850; }
+  .yen{ font-variant-numeric: tabular-nums; white-space:nowrap; font-weight:900; }
+  .memo{ font-size:12px; color:var(--muted); line-height:1.4; }
+
+  /* Desktop: table */
+  .tblwrap{ display:none; overflow:auto; border:1px solid var(--border); border-radius:12px; }
+  table{ width:100%; border-collapse:collapse; min-width:860px; background:#fff; font-size:13px; }
+  thead th{ background:#eef2ff; border:1px solid var(--border); padding:10px; text-align:left; }
+  td{ border:1px solid var(--border); padding:9px 10px; vertical-align:top; }
+  td.yen{ text-align:right; }
+
+  @media (min-width:900px){
+    .rows{ display:none; }
+    .tblwrap{ display:block; }
+  }
+
+  .pillTitle{
+    display:inline-flex; align-items:center; gap:8px;
+    font-weight:900; color:#243048;
+  }
+  .pillTitle b{ color:#1f4fbf; }
+
+  .zipInput{
+    width:100%;
+    max-width:240px;
+    padding:10px 12px;
+    border:1px solid var(--border);
+    border-radius:12px;
+    font-weight:800;
+    letter-spacing:.04em;
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <div id="pageFee">
+
+  <div class="top">
+    <div class="btnRow">
+      <button class="btn" id="resetBtn" type="button">選択を解除</button>
+      <button class="btn" id="recalcBtn" type="button">再計算</button>
+      <button class="btn btnBig btnAccent" id="refundBtn" type="button">自動車税 還付計算へ</button>
+    </div>
+    <div class="hint" id="ruleHint"></div>
+  </div>
+
+  <form id="feeForm">
+    <div class="grid">
+
+      <section class="card span2">
+        <h3><span class="chip">0</span> 地域選択</h3>
+        <div class="options cols2">
+          <label class="opt">
+            <input type="radio" name="region" value="HC奈良中央" checked>
+            <span>HC奈良中央</span>
+            <small>県外判定：奈良県以外 / 普通車+奈良県はOSS自動 / 軽自動車は書類代行固定</small>
+          </label>
+          <label class="opt">
+            <input type="radio" name="region" value="HC南京都">
+            <span>HC南京都</span>
+            <small>県外判定：京都府以外 / 普通車・軽自動車とも書類代行固定</small>
+          </label>
+        </div>
+        <div class="noteSmall">
+          ※地域で「基準府県」「申請方法ルール」「背景色」が切り替わります。
+        </div>
+      </section>
+
+      <section class="card">
+        <h3><span class="chip">①</span> 車種</h3>
+        <div class="options cols2">
+          <label class="opt"><input type="radio" name="car" value="普通車"><span>普通車（小型）</span></label>
+          <label class="opt"><input type="radio" name="car" value="軽自動車"><span>軽自動車（軽四）</span></label>
+        </div>
+        <div style="height:10px;"></div>
+        <label class="opt" style="max-width:360px;">
+          <input type="checkbox" id="isEV">
+          <span>EV（納車費用 1,000円）</span>
+          <small>※通常は納車費用 2,000円</small>
+        </label>
+
+      </section>
+
+      <section class="card">
+        <h3><span class="chip">②</span> 都道府県</h3>
+        <div class="options cols2">
+          <label class="opt"><input type="radio" name="pref" value="奈良県"><span>奈良県</span></label>
+          <label class="opt"><input type="radio" name="pref" value="京都府"><span>京都府</span></label>
+          <label class="opt"><input type="radio" name="pref" value="大阪府"><span>大阪府</span></label>
+          <label class="opt"><input type="radio" name="pref" value="滋賀県"><span>滋賀県</span></label>
+          <label class="opt"><input type="radio" name="pref" value="和歌山県"><span>和歌山県</span></label>
+          <label class="opt"><input type="radio" name="pref" value="三重県"><span>三重県</span></label>
+          <label class="opt"><input type="radio" name="pref" value="兵庫県"><span>兵庫県</span></label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3><span class="chip">③</span> 車庫証明</h3>
+        <div class="options cols2">
+          <label class="opt"><input type="radio" name="shakoNeed" value="必要"><span>必要</span></label>
+          <label class="opt"><input type="radio" name="shakoNeed" value="不要"><span>不要</span></label>
+        </div>
+        <div class="noteSmall">※申請方法が「書類代行」の場合のみ車庫証明代行費用を表示します（「OSS」はOSS申請代行費用に含む）</div>
+
+        <div style="height:10px;"></div>
+        <div>
+          <div class="noteSmall" style="margin:0 0 6px;">郵便番号（7桁）</div>
+          <input
+            id="zip"
+            class="zipInput"
+            type="text"
+            inputmode="numeric"
+            autocomplete="postal-code"
+            placeholder="例）6360211"
+            maxlength="8"
+          />
+          <div class="noteSmall" id="zipStatus" style="margin-top:6px;"></div>
+          <div class="noteSmall" style="margin-top:6px;">
+            ※判定データ：Book1.csv（2019.07.01現在）を埋め込み
+          </div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3><span class="chip">④</span> 申請方法</h3>
+        <div class="options cols2">
+          <label class="opt" id="applyOSSLabel"><input type="radio" name="apply" value="OSS" id="applyOSS"><span>OSS</span></label>
+          <label class="opt"><input type="radio" name="apply" value="書類代行" id="applyDocs"><span>書類代行</span></label>
+        </div>
+        <div class="noteSmall" id="applyLockNote" style="display:none;"></div>
+      </section>
+
+      <section class="card span2">
+        <h3><span class="chip">⑤</span> 方式 → <span class="chip">⑥</span> 標板</h3>
+
+        <div class="noteSmall" style="margin:0 0 6px;">方式（先に選択）</div>
+        <div class="options cols2">
+          <label class="opt"><input type="radio" name="plateStyle" value="ペイント"><span>ペイント</span></label>
+          <label class="opt"><input type="radio" name="plateStyle" value="字光式"><span>字光式</span><small>※希望図柄は不可</small></label>
+        </div>
+
+        <div style="height:10px;"></div>
+
+        <div id="plateKindBox" class="disabled">
+          <div class="noteSmall" style="margin:0 0 6px;">標板（方式を選択後に選択可）</div>
+          <div class="options cols3">
+            <label class="opt"><input type="radio" name="plate" value="一般番号"><span>一般番号</span></label>
+            <label class="opt"><input type="radio" name="plate" value="希望番号"><span>希望番号</span></label>
+            <label class="opt"><input type="radio" name="plate" value="希望図柄番号"><span>希望図柄番号</span><small>※ペイントのみ</small></label>
+          </div>
+        </div>
+
+        <div style="height:10px;"></div>
+
+        <div id="patternBox" class="disabled">
+          <div class="noteSmall" style="margin:0 0 8px;">図柄（希望図柄番号のとき）</div>
+          <div class="options cols3">
+            <label class="opt"><input type="radio" name="pattern" value="ご当地"><span>ご当地</span></label>
+            <label class="opt"><input type="radio" name="pattern" value="全国図柄"><span>全国図柄</span></label>
+            <label class="opt"><input type="radio" name="pattern" value="園芸博図柄"><span>園芸博図柄</span></label>
+          </div>
+
+          <div style="height:10px;"></div>
+
+          <div class="noteSmall" style="margin:0 0 8px;">図柄の色（カラー/モノトーン）</div>
+          <div class="options cols2">
+            <label class="opt"><input type="radio" name="patternColor" value="モノトーン"><span>モノトーン</span><small>寄付金なし</small></label>
+            <label class="opt"><input type="radio" name="patternColor" value="カラー"><span>カラー</span><small>寄付金 1,000円（課税）</small></label>
+          </div>
+        </div>
+
+        <div class="noteSmall">※「字光式」を選ぶと「希望図柄番号」は選択できません。</div>
+      </section>
+
+
+      <section class="card span2">
+        <h3><span class="chip">⑦</span> 下取り / <span class="chip">⑧</span> 所有者 / <span class="chip">⑨</span> 残債</h3>
+
+        <div class="options cols2">
+          <label class="opt"><input type="radio" name="trade" value="あり"><span>下取りあり</span></label>
+          <label class="opt"><input type="radio" name="trade" value="なし"><span>下取りなし</span></label>
+        </div>
+
+        <div style="height:10px;"></div>
+
+        <div id="ownerBox">
+          <div class="noteSmall" style="margin:0 0 8px;">所有者（下取りありのとき）</div>
+          <div class="options cols2">
+            <label class="opt"><input type="radio" name="owner" value="お客様"><span>所有権 お客様</span></label>
+            <label class="opt"><input type="radio" name="owner" value="信販会社"><span>所有権 信販会社</span></label>
+          </div>
+        </div>
+
+        <div style="height:10px;"></div>
+
+        <div id="loanBox">
+          <div class="noteSmall" style="margin:0 0 8px;">残債（所有権が信販会社のとき）</div>
+          <div class="options cols2">
+            <label class="opt"><input type="radio" name="loan" value="あり"><span>残債あり</span></label>
+            <label class="opt"><input type="radio" name="loan" value="なし"><span>残債なし</span></label>
+          </div>
+        </div>
+      </section>
+      <section class="card span2">
+        <h3><span class="chip">⑩</span> 点検パック</h3><div class="options cols2" style="align-items:flex-start;">
+          <div>
+            <div class="noteSmall" style="margin:0 0 6px;">車両区分（自動/手動）</div>
+            <select id="inspectVehicleClass" class="zipInput" style="max-width:360px;">
+              <option value="auto">自動（車種から推定）</option>
+              <option value="kei">軽自動車</option>
+              <option value="cargo">軽貨物</option>
+              <option value="small">小型車（5ナンバー 1500cc以下）</option>
+              <option value="mid">中型車（5ナンバー 1501cc以上）</option>
+              <option value="normal">普通車（3ナンバー）</option>
+            </select>
+          </div>
+        </div>
+
+        <div style="height:10px;"></div>
+
+        
+
+<div class="noteSmall" style="margin:0 0 8px;">点検パック種別</div>
+        <div class="options cols3">
+          <label class="opt"><input type="radio" name="inspectPackType" value="フルカバ"><span>フルカバ</span></label>
+          <label class="opt"><input type="radio" name="inspectPackType" value="チャオ"><span>チャオ</span></label>
+          <label class="opt"><input type="radio" name="inspectPackType" value="なし" checked><span>なし</span></label>
+        </div>
+        <div style="height:10px;"></div>
+        <div>
+          <div class="noteSmall" style="margin:0 0 6px;">バックコース</div>
+          <select id="inspectCourse" class="zipInput" style="max-width:220px;">
+            <option value="">（未選択）</option>
+          </select>
+        </div>
+<div>
+          <div class="noteSmall" style="margin:0 0 6px;">マモル（任意）</div>
+          <div style="display:flex; gap:8px; align-items:flex-end; flex-wrap:wrap;">
+            <select id="mamoruClass" class="zipInput" style="max-width:360px;">
+            <option value="none">なし</option>
+            <option value="m660">660cc以下（10,000円）</option>
+            <option value="m661_1500">661〜1500cc（13,000円）</option>
+            <option value="m1501_2000">1501〜2000cc（19,000円）</option>
+            <option value="m2001">2001cc以上（23,500円）</option>
+            <option value="mcargo">軽貨物（7,500円）</option>
+          </select>
+            <button class="btn" id="mamoruClearBtn" type="button" style="min-height:42px; padding:10px 12px;">選択解除</button>
+          </div>
+        </div>
+        <div style="height:10px;"></div>
+
+        <div>
+          <div class="noteSmall" style="margin:0 0 6px;">パンク保証（任意）</div>
+          <select id="puncturePlan" class="zipInput" style="max-width:360px;">
+            <option value="none">なし</option>
+            <option value="p50">３年５万円（7,150円）</option>
+            <option value="p100">３年１０万円（11,550円）</option>
+            <option value="p150">３年１５万円（16,500円）</option>
+          </select>
+        </div>
+
+
+        <div class="noteSmall" style="margin-top:8px;">
+          ※車両区分が「自動」の場合：軽自動車→軽自動車、普通車→小型車（1500cc以下）として計算します。<br>
+          ※チャオは軽貨物の価格表が無いため、軽貨物を選ぶと0円表示になります。
+        </div>
+      </section>
+
+
+    </div>
+
+    <div class="result">
+      <div class="resultTop">
+        <div class="total">合計：<span id="totalYen">0</span> 円</div>
+        <div class="status" id="statusText">必須項目を選択してください</div>
+      </div>
+
+      <div class="rows" id="resultRows"></div>
+
+      <div class="tblwrap">
+        <table>
+          <thead>
+            <tr>
+              <th style="width:44%;">項目</th>
+              <th class="yen" style="width:18%;">金額</th>
+              <th style="width:38%;">備考</th>
+            </tr>
+          </thead>
+          <tbody id="resultTbody"></tbody>
+          <tfoot>
+<tr>
+              <td>非課税分小計</td>
+              <td class="yen" id="nontaxSubtotalYen">0</td>
+              <td></td>
+            </tr>
+
+          </tfoot>
+        </table>
+      </div>
+
+      <div class="hint" style="margin-top:10px;">
+        ※非課税：車庫証紙 / 下取車諸手続（登録証紙・下取証紙は表示しません）<br>
+        ※課税分の「R発行費用/振込手数料」に、必要時のみ残債手数料(880円)を合算して1行表示します
+      </div>
+    </div>
+  </form>
+
+
+  </div><!-- /#pageFee -->
+
+  <div id="pageRefund" style="display:none;">
+    <div class="top">
+      <div class="btnRow">
+        <button class="btn btnBig" id="backToFeeBtn" type="button">← 戻る</button>
+      </div>
+      <div class="hint">
+        自動車税（種別割）の還付（普通車）を月割りで計算します。<br>
+        ※軽自動車税（種別割）は、原則として月割り還付がありません。
+      </div>
+    </div>
+
+    <div class="grid">
+      <section class="card span2">
+        <h3><span class="chip">A</span> 車両情報</h3>
+
+        <div class="options cols2">
+          <label class="opt"><input type="radio" name="rt_car" value="普通車" checked><span>普通車</span></label>
+          <label class="opt"><input type="radio" name="rt_car" value="軽自動車"><span>軽自動車</span></label>
+        </div>
+        <div style="height:10px;"></div>
+
+        <div class="noteSmall" style="margin:0 0 8px;">初年度登録（西暦 / 和暦）</div>
+        <div class="options cols2" style="align-items:flex-start;">
+          <div style="min-width:240px;">
+            <select id="rt_firstYear" class="zipInput" style="max-width:220px;"></select>
+          </div>
+          <div style="min-width:160px;">
+            <select id="rt_firstMonth" class="zipInput" style="max-width:140px;"></select>
+          </div>
+        </div>
+        <div class="noteSmall" id="rt_firstDisplay" style="margin-top:6px;">—</div>
+
+
+        <div style="height:10px;"></div>
+
+        <div id="rt_engineBox">
+          <div class="noteSmall" style="margin:0 0 8px;">排気量区分（普通車）</div>
+          <select id="rt_engine" class="zipInput" style="max-width:320px;">
+            <option value="<=1.0">0〜1,000cc</option>
+            <option value=">1.0<=1.5">1,001〜1,500cc</option>
+            <option value=">1.5<=2.0">1,501〜2,000cc</option>
+            <option value=">2.0<=2.5">2,001〜2,500cc</option>
+            <option value=">2.5<=3.0">2,501〜3,000cc</option>
+            <option value=">3.0<=3.5">3,001〜3,500cc</option>
+            <option value=">3.5<=4.0">3,501〜4,000cc</option>
+          </select>
+          <div class="noteSmall" style="margin-top:6px;">
+            ※初年度登録が2019年9月以前は「標準（旧）」、2019年10月以降は「標準（新）」を使用します。重課は別表の金額を使用します。
+          </div>
+        </div>
+
+        <div style="height:10px;"></div>
+
+        <div class="options cols2">
+          <label class="opt">
+            <input type="checkbox" id="rt_isSurcharge">
+            <span>重課（初度登録から13年超など）</span>
+            <small>※初年度登録から13年以上経過している場合、自動的に重課を適用します（対象外の車種もあります）。</small>
+          </label>
+        </div>
+      </section>
+
+      <section class="card">
+        <h3><span class="chip">B</span> 抹消月</h3>
+        <div class="noteSmall" style="margin:0 0 8px;">抹消（廃車）した月を選択</div>
+        <select id="rt_cancelMonth" class="zipInput">
+          <option value="4">4月</option>
+          <option value="5">5月</option>
+          <option value="6">6月</option>
+          <option value="7">7月</option>
+          <option value="8">8月</option>
+          <option value="9">9月</option>
+          <option value="10">10月</option>
+          <option value="11">11月</option>
+          <option value="12">12月</option>
+          <option value="1">1月</option>
+          <option value="2">2月</option>
+          <option value="3">3月</option>
+        </select>
+        <div class="noteSmall" style="margin-top:6px;">
+          ※還付対象月数は「抹消の翌月」〜「3月」まで（100円未満切上げ）。
+        </div>
+      </section>
+
+      <section class="card">
+        <h3><span class="chip">C</span> 計算</h3>
+        <div class="btnRow">
+          <button class="btn btnBig btnAccent" id="rt_calcBtn" type="button">還付金額を計算</button>
+          <button class="btn btnBig" id="rt_clearBtn" type="button">入力をクリア</button>
+        </div>
+
+        <div class="result" style="margin-top:12px;">
+          <div class="resultTop">
+            <div class="total">還付見込：<span id="rt_refundYen">0</span> 円</div>
+            <div class="total">お客様負担額：<span id="rt_burdenTopYen">0</span> 円</div>
+            <div class="status" id="rt_status">—</div>
+          </div>
+          <div class="rows">
+            <div class="row">
+              <div class="rowHeader"><div class="label">年税額</div><div class="yen" id="rt_annualYen">0</div></div>
+              <div class="memo" id="rt_annualMemo"></div>
+            </div>
+            <div class="row">
+              <div class="rowHeader"><div class="label">還付対象月数</div><div class="yen" id="rt_months">0</div></div>
+              <div class="memo">※（年税額 × 月数 ÷ 12）を100円未満切上げで計算</div>
+            </div>
+            <div class="row">
+              <div class="rowHeader"><div class="label">お客様負担額</div><div class="yen" id="rt_burdenYen">0</div></div>
+              <div class="memo">※年税額 − 還付見込</div>
+            </div>
+          </div>
+        </div>
+
+      </section>
+    </div>
+  </div><!-- /#pageRefund -->
+
+</div>
+
+<script>
+/** ========= 料金表 ========= **/
+function typeKeyFromCar(car){ return (car === "軽自動車") ? "軽四" : "小型"; }
+const APPLY_FEE = { "OSS": 41000, "書類代行": 24500 };
+const KENGAI_FEE = 10000;
+const SHAKO_DAIKO_KEI_NEED = 16800;
+
+const SHAKO_SHOSHI = {
+  "奈良県": { "軽四": 0, "小型": 2400 },
+  "京都府": { "軽四": 0, "小型": 2280 },
+  "大阪府": { "軽四": 0, "小型": 2200 },
+  "滋賀県": { "軽四": 0, "小型": 2250 },
+  "和歌山県": { "軽四": 0, "小型": 2100 },
+  "三重県": { "軽四": 0, "小型": 2200 },
+  "兵庫県": { "軽四": 0, "小型": 2200 }
+};
+
+const PLATE_PAINT = {
+  "軽四": {
+    "奈良県": { "一般番号": 2180, "希望番号": 6060, "ご当地": 11400, "全国図柄": 11400, "園芸博図柄": 11740 },
+    "京都府": { "一般番号": 2180, "希望番号": 5460, "ご当地": 11050, "全国図柄": 11050, "園芸博図柄": 11400 },
+    "大阪府": { "一般番号": 2000, "希望番号": 5500, "ご当地": null, "全国図柄": 10200, "園芸博図柄": 10500 },
+    "滋賀県": { "一般番号": 2180, "希望番号": 5720, "ご当地": 11460, "全国図柄": 11460, "園芸博図柄": 11800 },
+    "和歌山県": { "一般番号": 2180, "希望番号": 6040, "ご当地": null,  "全国図柄": 11400, "園芸博図柄": 11740 },
+    "三重県": { "一般番号": 2200, "希望番号": 6000, "ご当地": 10800, "全国図柄": 10800, "園芸博図柄": 11120 },
+    "兵庫県": { "一般番号": 2200, "希望番号": 5800, "ご当地": null,  "全国図柄": 11400, "園芸博図柄": 11700 }
+  },
+  "小型": {
+    "奈良県": { "一般番号": 1990, "希望番号": 5510, "ご当地": 10370, "全国図柄": 10370, "園芸博図柄": 10710 },
+    "京都府": { "一般番号": 1990, "希望番号": 4970, "ご当地": 10050, "全国図柄": 10050, "園芸博図柄": 10380 },
+    "大阪府": { "一般番号": 1900, "希望番号": 5300, "ご当地": null,  "全国図柄": 9800,  "園芸博図柄": 10100 },
+    "滋賀県": { "一般番号": 1990, "希望番号": 5200, "ご当地": 10420, "全国図柄": 10420, "園芸博図柄": 10760 },
+    "和歌山県": { "一般番号": 1950, "希望番号": 5350, "ご当地": null,  "全国図柄": 10360, "園芸博図柄": 10700 },
+    "三重県": { "一般番号": 1980, "希望番号": 5440, "ご当地": 9820,  "全国図柄": 9820,  "園芸博図柄": 10140 },
+    "兵庫県": { "一般番号": 1990, "希望番号": 5300, "ご当地": null,  "全国図柄": 10400, "園芸博図柄": 10700 }
+  }
+};
+
+const PLATE_JIKOU = {
+  "軽四": {
+    "奈良県": { "一般番号": 9560, "希望番号": 11710 },
+    "京都府": { "一般番号": 9440, "希望番号": 11590 },
+    "大阪府": { "一般番号": 8700, "希望番号": 10100 },
+    "滋賀県": { "一般番号": 9560, "希望番号": 11710 },
+    "和歌山県": { "一般番号": 9560, "希望番号": 11710 },
+    "三重県": { "一般番号": 7900, "希望番号": 9700 },
+    "兵庫県": { "一般番号": 8700, "希望番号": 10600 }
+  },
+  "小型": {
+    "奈良県": { "一般番号": 6860, "希望番号": 10030 },
+    "京都府": { "一般番号": 6850, "希望番号": 9700 },
+    "大阪府": { "一般番号": 5800, "希望番号": 8300 },
+    "滋賀県": { "一般番号": 6910, "希望番号": 9830 },
+    "和歌山県": { "一般番号": 6700, "希望番号": 9070 },
+    "三重県": { "一般番号": 5800, "希望番号": 9440 },
+    "兵庫県": { "一般番号": 6820, "希望番号": 10560 }
+  }
+};
+
+const HOPE_FEE = { "小型": 11000, "軽四": 11000 };
+const PATTERN_FEE = { "小型": 20000, "軽四": 17000 };
+const PATTERN_DONATION = 1000;
+const JIKOU_TOOL = 27500;
+
+const DELIVERY_FEE = 2000;
+const DELIVERY_FEE_EV = 1000;
+
+const TRADEIN_DAIKO = 23000;
+const TRADEIN_PROC = 500;
+
+const LOAN_FEE = 880;
+const R_ISSUE = 2200;
+const REG_STAMP = { "OSS": 2200, "小型": 2800, "軽四": 2800 };
+
+
+
+/** ========= 点検パック（2025/4/1以降 画像の価格表） ========= **/
+const INSPECT_PACK = {
+  "フルカバ": {
+    "normal": { // 軽自動車/小型/中型/普通車(3ナンバー)
+      "LS": { kei:171500, small:188400, mid:195000, normal:208900 },
+      "LT": { kei:134600, small:148700, mid:155000, normal:165200 },
+      "5S": { kei:98600,  small:108300, mid:112300, normal:119900 },
+      "5T": { kei:61700,  small:68600,  mid:72300,  normal:76200  }
+    },
+    "cargo": { // 軽貨物
+      "LS": 150800,
+      "LT": 113900,
+      "3S": 77900,
+      "3T": 41000
+    }
+  },
+  "チャオ": {
+    "LS": { kei:166500, small:183400, mid:190000, normal:203900 },
+    "LT": { kei:129600, small:143700, mid:150000, normal:160200 },
+    "5S": { kei:93600,  small:103300, mid:107300, normal:114900 },
+    "5T": { kei:56700,  small:63600,  mid:67300,  normal:71200  },
+    "4S": { kei:89500,  small:98700,  mid:102200, normal:109700 },
+    "4T": { kei:52600,  small:59000,  mid:62200,  normal:66000  },
+    "3S": { kei:72900,  small:80100,  mid:82700,  normal:89000  },
+    "3T": { kei:36000,  small:40400,  mid:42700,  normal:45300  },
+    "2S": { kei:63200,  small:69200,  mid:71100,  normal:76700  },
+    "2T": { kei:26300,  small:29500,  mid:31100,  normal:33000  },
+    "1S": { kei:46600,  small:50600,  mid:51600,  normal:56000  },
+    "SS": { kei:72900,  small:80100,  mid:82700,  normal:89000  }
+  }
+};
+
+const MAMORU_FEE = {
+  none: 0,
+  m660: 10000,
+  m661_1500: 13000,
+  m1501_2000: 19000,
+  m2001: 23500,
+  mcargo: 7500
+};
+
+const PUNCTURE_FEE = {
+  none: 0,
+  p50: 7150,
+  p100: 11550,
+  p150: 16500
+};
+
+/** ========= UI / 計算 ========= **/
+const yenFmt = n => new Intl.NumberFormat("ja-JP").format(Math.max(0, Math.round(n||0)));
+const form = document.getElementById("feeForm");
+const plateKindBox = document.getElementById("plateKindBox");
+const patternBox = document.getElementById("patternBox");
+const statusText = document.getElementById("statusText");
+const totalYenEl = document.getElementById("totalYen");
+const tbody = document.getElementById("resultTbody");
+const rowsEl = document.getElementById("resultRows");
+const nontaxEl = document.getElementById("nontaxSubtotalYen");
+
+
+const inspectVehicleClassEl = document.getElementById("inspectVehicleClass");
+const inspectCourseEl = document.getElementById("inspectCourse");
+const mamoruClassEl = document.getElementById("mamoruClass");
+const puncturePlanEl = document.getElementById("puncturePlan");
+const mamoruClearBtn = document.getElementById("mamoruClearBtn");
+
+const ruleHint = document.getElementById("ruleHint");
+
+const applyOSS = document.getElementById("applyOSS");
+const applyOSSLabel = document.getElementById("applyOSSLabel");
+const applyLockNote = document.getElementById("applyLockNote");
+const ownerBox = document.getElementById("ownerBox");
+const loanBox = document.getElementById("loanBox");
+
+const zipEl = document.getElementById("zip");
+const zipStatusEl = document.getElementById("zipStatus");
+
+/** ========= 車庫証明判定データ（Book1.csv埋め込み / 2019.07.01現在） =========
+ * 形式： "delta(base36).mask(hex)" をカンマ区切り
+ * - 郵便番号は昇順、deltaは前の郵便番号との差
+ * - mask bit:
+ *   1=軽:必要, 2=軽:不要, 4=小型:必要, 8=小型:不要
+ */
+const ZIP_MASK_DATA = [
+  "2yr7l.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,2jyh.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.6,1.6,1.6,1.6,1.6,1.6,1.6,2m.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,3.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,z.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,df.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1b.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,8.5,6y.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1m.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,55d.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1q.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1g4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,c.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,24.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,36.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1r.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,7p.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,y.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4a.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,728.5,go.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,4l.5,1.5,1.5,1.5,1.5,6.5,2.5,1.5,1.5,1.5,2d.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,2d.5,1.5,1.5,1.5,1.5,1.5,573.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1hr.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,km.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,7e.5,1.5,1.5,1.5,6ul.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,f.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,4q.5,1.5,1.5,1.5,1.5,6.6,1.6,1.6,1.6,1.6,6.6,2.6,1.6,1.6,1.6,d7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,7b.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.5,34.6,1.6,1.6,1.5,1.6,1.6,1.6,1.6,nf.a,1.a,1.a,1.a,1.a,1.a,1.a,4.a,1.a,1.a,1.a,1.a,2e.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,7.5,1.5,27.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,5x5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,d.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,21.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,2c.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,43.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,a.a,7s.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,71.5,1.5,1.5,1.5,1.5,1.5,1.5,2m.5,1.5,1.5,1.5,1.5,2o.6,1.6,1.6,1.6,2z.6,1.6,1.6,2g.6,1.6,1.6,1.6,1.6,1.6,2x.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2v.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,a7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.5,1.5,1.5,4o.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.5,1.5,1.5,1.5,7.6,1.6,1.6,1.6,1.6,1.6,1.6,18.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.5,1.5,1.5,1.5,2f.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,23.6,1.6,1.6,1.6,1.5,6.6,1.6,1.6,1.6,1.6,1.6,1.5,4.6,1.6,1.6,1.6,e3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1q.a,1.a,1.a,30.a,1.a,1.a,30.a,32.a,1.a,1.a,1.a,1.a,1.a,4zl.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,m.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2v.6,1.6,g3.a,1.a,1.a,1.a,1.a,1.a,87.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3f.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1i.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,34.6,1.6,1.6,30.6,1.6,1.6,1.6,1.6,1.6,fp.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,62y.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,y.5,3c.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,53.6,1.6,1.6,1.6,1.6,2o.6,1.6,1.6,1.6,1.6,1.6,1.6,2m.6,1.6,1.6,1.6,2p.6,1.6,1.6,1.6,1.6,768.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1t.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1y.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4u.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,f.6,1.6,1.6,1.6,1.6,2o.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1i.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,q.6,1.6,2.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,2.6,1.6,7b.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,42.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,23.a,2.a,1.a,1.a,1.a,1.a,1.a,4.a,2.a,2.a,1.a",
+  ",4.a,1.a,2.a,1.a,1.a,1.a,1.a,1.a,6ow.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,a.6,u.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1c.5,1.5,13.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,25.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1r.6,1.6,1.6,1.6,1.6,1.6,1.6,2m.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,dm.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,7k.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,7n.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,3.a,by.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,c.a,1.a,1.a,1.a,7.a,1.a,1.a,1.a,1.a,1.a,55.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,20.a,1.a,1.a,1.a,1.a,1.a,1.a,4.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,3.a,1.a,1.a,1.a,1.a,2y.a,1.a,1.a,1.a,1v.6,1.6,1.6,1.6,r.6,1.6,1.6,1.6,1.6,1.6,1t.6,1.6,31.6,5k.a,2i.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,5c.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,50.6,1.6,2.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,2.6,1.6,8.6,3.6,1.6,1.6,1.6,2.6,1.6,3.6,1.6,1.6,3.6,1.6,1.6,3.6,2.6,1.6,4.6,1.6,2.6,1.6,4.6,1.6,1.6,1.6,r.6,1.6,31.6,1.6,1.6,1.6,2z.6,1.6,1.6,1.6,7p.6,1.6,1.6,1.6,1.6,1.6,1.6,36.6,1.6,1.6,1.6,1.6,1.6,1.6,36.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,34.6,1.6,1.6,1.6,1.6,1.6,2x.6,1.6,1.6,1.6,1.6,em.6,1.6,1.6,1.6,1.6,1.6,5.6,32.6,1.6,1.6,1.6,1.6,1.6,1.6,22.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,7w.a,a.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,35.6,1.6,1.6,1.6,1.6,37q.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,y.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,2x.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2v.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,2q.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,n.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,7g.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,6e.6,1.6,1.6,8.6,1.6,9.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1l.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,4m.a,a.a,1.a,1.a,1.a,1.a,6.a,1.a,1.a,1.a,1.a,6.a,1.a,1.a,8.a,1.a,1.a,1.a,7.a,1.a,1.a,1.a,1.a,1a.6,1.6,1.6,8.6,1.6,9.6,1.6,9.6,1.6,1.6,1w.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,42.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,7c.5,1.5,9.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,2m.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,m.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1a.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1s.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,a.6,1.6,9.6,1.6,9.6,1.6,1.6,1.6,7.6,1.6,1.6,bw.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1i.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,5.6,28.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,2.6,4.6,1.6,2.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1a.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1w.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,52d.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,q.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,30.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1k.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,li.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1i.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1k.6,a.6,a.6,1.6,9.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,6oa.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,34.5,a.5,1.5,1.5,1.5,7.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,u.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,7fx.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,ju.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,70v.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,10.6,1.6,1.6,1.6,2p.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,7ju.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,2.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,7nt.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,x.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1u.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,ek.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,72a.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,q.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,7jd.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,3j.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,8.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,7m2.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1l.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,1.6,7.6,a.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,q.",
+  "6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,9.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,y.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1s.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,4g.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,bt.5,1.5,1.5,1.5,1.5,1.5,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,o.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1s.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1y.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1k.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,a.6,a.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,t.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,3s.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,a.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,8.6,6ae.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4l4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1f.5,b.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1j.5,2yz.5,k.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4kk.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1f.5,b.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1f.5,2xv.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,7ot.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,7ow.5,1.5,9.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,7p2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,8.5,1.5,9.5,7oy.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,7p4.5,1.5,1.5,8.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,7py.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,fe3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,4lm.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1h.5,b.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1g.5,b.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1g.5,b.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1s.5,2tf.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,7oh.5,1d.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,7nf.5,1.5,9.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,7np.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7ov.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,8.5,1.5,1.5,4l8.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,u.5,30n.5,1.5,1.5,8.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7ol.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,fe9.6,a.6,a.6,7p8.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,7p2.5,1.5,1.5,8.5,1.5,1.5,8.5,1.5,1.5,8.5,1.5,1.5,7ow.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,7p6.5,1.5,1.5,1.5,1.5,1.5,1.5,7pm.5,1.5,9.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,7.5,1.5,1.5,8.5,1.5,1.5,8.5,1.5,7od.5,a.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,7ol.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,7p0.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,7o2.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,7o9.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,7ov.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,p.5,1.5,1.5,1.5,1.5,89o.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,70z.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,7ot.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,16.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,24.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,w.5,1.5,3.5,1.5,1.5,1.5,2b.6,a.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,bw.5,73k.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,8.5,1.5,1.5,8.5,1.5,1.5,89q.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,71i.5,1.5,9.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7nr.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,8.5,1.5,1.5,jv.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,734.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,7n3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,jk.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,40.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1b.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,6ty.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,",
+  "1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,7n3.5,1.5,3.5,2.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,7nm.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,js.5,2.5,3.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,71q.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,pu.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,6sk.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,7no.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,7o2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,9.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,8.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,7nz.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,2.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,ke.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,7r8.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,2.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,d4o.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1hr.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,7oj.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,jm.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,718.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,7p0.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,mc.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,2x.6,1.6,1.6,1.6,1.6,1.6,6y5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,7n6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,7oa.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,7n4.6,1.6,1.6,8.6,1.6,1.6,1.6,7.6,1.6,9.6,1.6,9.6,1.6,1.6,8.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,fdr.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,7ot.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,m.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,6r.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,14.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,7e.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1s.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,d4m.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1ib.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,6f1.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,7od.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1ag.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,8.5,1.5,1.5,8.5,1.5,9.5,1.5,9.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,sa.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,6to.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,k0.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,737.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,n.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,j1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1k.6,70s.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,7mo.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,g.6,1.",
+  "6,1.6,1.6,7sr.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1t.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,60b.5,1.5,1.5,1.5,3.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2v.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,7i5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,w.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,8e.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,xe.5,1.5,9.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,2y.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,x.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,25.6,1.6,1.6,1.6,1.6,1.6,3h.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,4e.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,8z.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,2y.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1a.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,51l.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1h.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,d.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,2g.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,16b.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,ji.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,a.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,5fm.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,o.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,m.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,7bz.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,e.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,m.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1i.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,n.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,8j.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,",
+  "1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,vm.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,jl.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,f.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5el.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,e.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,o.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,h.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,8g.5,1.5,1.5,1.5,1.5,6.5,1.5,9.5,1.5,1.5,1.5,7.5,1.5,9.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,8.5,1.5,1.5,1.5,vb.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,9.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,js.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,n.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6y6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,jj.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,y.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,5fe.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,f.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,e.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,7d6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,9.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,a.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,9.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,14.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,a.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,17.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,8.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,go3.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,28.6,1.6,9.6,a.6,a.6,a.6,a.6,1.6,1.6,1.6,1.6,6.6,14.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,kj.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,6ts.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,7ok.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,js.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,5hk.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,c.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,a.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,17.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5",
+  ",1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,2.5,3.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,2.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,2.5,3.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,16a.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,md.6,1.6,1.6,1c.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,d6l.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,194.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,jk.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,g.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,5g7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,e.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1b6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,65i.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,15v.6,1.6,1.6,1.6,1.6,1.6,md.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,720.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1b.6,a.6,a.6,7su.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,nr.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1b.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,23.6,1.6,1.6,1.6,2p.a,1.a,9.a,1.a,9.a,1.a,6mb.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3f.6,a.6,1.6,1.6,1.6,7.6,28.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,cd.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,8o.6,1.6,9.6,1.6,1.6,1.6,2z.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6lo.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1b.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,2w.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,ey.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,71o.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,3r.6,1.6,1.6,8.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1t.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,31.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,7d8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,z.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,2w.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,2x.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,8.6,1.6,1.6,1.6,l1.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,6x3.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,is.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1a.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.",
+  "6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,6yx.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,18.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,7lf.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,3g.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,4u.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,7ds.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1b.6,1.6,9.6,1.6,9.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1k.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,fbg.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,9.6,1.6,1.6,1.6,7.6,a.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,2x.6,u.6,1.6,9.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,l4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,9.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,2o.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,r.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,p8.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,a.6,1.6,1.6,12.6,1.6,1.6,8.6,1.6,1.6,1.6,2f.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,1.6,26.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,1.6,fr.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,2x.6,1.6,1.6,1.6,1.6,1.6,4b.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2u.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,516.5,a.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1n.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,n1.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,2x.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,p6.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,n.a,1.a,1.a,1.a,1.a,6.a,1.a,9.a,1.a,1.a,1.a,1.a,6.a,1.a,1.a,1.a,1v.a,1.a,1.a,1.a,1.a,1.a,z.a,1.a,1.a,1.a,1.a,1.a,5.a,1.a,1.a,1.a,1.a,1.a,1.a,4cs.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1b.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1j.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,16z.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,k3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,72b.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,26.a,1.a,1.a,1.a,1.a,1.a,1.a,e.6,a.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,7iu.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,a.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,9.6,1.6,9.6,1.6,1.6,1w.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1i.a,1.a,1.a,1.a,1.a,1.a,1.a,2w.a,1.a,1.a,1.a,1.a,lk.a,1.a,1.a,8.a,1.a,1.a,1.a,1.a,1.a,2d.a,1.a,1.a,1.a,m5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,m.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,22.a,1.a,1.a,1.a,7.a,1.a,1.a,1.a,2z.a,1.a,1.a,1.a,7.a,1.a,1.a,8.a,1.a,1.a,1.a,5tx.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,9.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,n.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,i8.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,72a.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,hz.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,72m.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,s.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,9.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1b.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1h.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,ce.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1v.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6zk.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,8.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,7.6,1.6,1.6,8.a,1.a,1.a,1.a,1.a,6.a,1.a,1.a,1.a,1.a,1.a,1.a,2w.a,1.a,1.a,1.a,1.a,1.a,1.a,3.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,4i.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,2.a,1.a,1.a,1.a,1.a,1.a,1.a,2.a,2.a,1.a,1.a,1.a,1.a,is.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,2v.a,1.a,1.a,1.a,1.a,1.a,1.a,4.a,1.a,1.a,1.a,1.a,2y.a,1.a,1.a,1.a,1.a,1.a,2x.a,1.a,1.a,1.a,1.a,1.a,2x.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,2u.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,6fh.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,4c.a,1.a,1.a,8.a,a.a,a.a,1.a,1.a,8.a,1.a,1.a,8.a,1e.a,1.a,1.a,1.a,1.a,6.a,1.a,1.a,1.a,1.a,6.a,1.a,31.a,32.a,1.a,1.a,8.a,1.a,1.a,8.a,1.a,1.a,1.a,25.a,1.a,1.a,1.a,7.a,1.a,1.a,1.a,1.a,1.a,1.a,4.a,1.",
+  "a,1.a,3u.6,1.6,1.6,8.6,1.6,9.6,a.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,77o.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,k5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,z.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,pw.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,11.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,m.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,kz.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,5d.6,1.6,1.6,1.6,1.6,2y.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,2n.a,1.a,1.a,8.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,17.a,1.a,1.a,1.a,7.a,1.a,1.a,8.a,1.a,1.a,8.a,1.a,1.a,1.a,1.a,1u.a,1.a,1.a,1.a,1.a,2o.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,4us.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,56.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,7.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,8.5,1.5,1.5,1.5,11.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,h.6,1.6,1.6,8.6,1.6,1.6,1.6,hz.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,a.6,a.6,k.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,q.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,24.6,1.6,1.6,i.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,2x.6,1.6,1.6,1.6,1.6,1.6,5.6,514.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,n.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,16.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,8.5,1.5,1.5,1.5,7.5,1.5,9.5,1.5,1.5,166.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,7o3.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,7ou.6,1.6,1.6,1.6,1.6,1.6,1.6,e.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,h.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1a.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,3r.6,1.6,1.6,1.6,1b.6,1.6,1.6,1.6,1.6,1.6,41.6,1.6,1.6,1.6,1.6,6.6,1.6,9.6,1.6,1.6,8.6,1.6,1.6,1.6,7.6,1e.6,1.6,1.6,1.6,1.6,6.a,1.a,1.a,1.a,57.6,1.6,1.6,8.6,1.6,1.6,s.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,722.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,4c.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,oj.6,a.a,a.a,1.a,1.a,8.a,1.a,1.a,1.a,7.a,1.a,1.a,8.a,1.a,9.a,1.a,1.a,1.a,11.a,a.a,1.a,1.a,1.a,7.a,1.a,9.a,a.a,1.a,1.a,1.a,6r9.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,4t.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,2l.a,1.a,1.a,30.a,1.a,1.a,1.a,1.a,1.a,1.a,2w.a,1.a,1.a,1.a,1.a,q.a,7ai.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,2.6,1.6,1.6,12.6,1.6,31.6,1.6,1.6,1.6,1.6,1.6,1.6,2c.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,lv.a,32.a,1.a,1.a,1.a,2z.a,1.a,1.a,1.a,1.a,1.a,5.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,1.6,1q.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,a.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,6lu.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,a.6,1.6,1.6,8.6,sc.6,1.6,1.6,2q.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,10.a,1e.6,1.6,1.6,1.6,1.6,74.a,1.a,1.a,1.a,h.a,1.a,1.a,1.a,1.a,2o.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,6d4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,a.6,a.6,a.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,a.6,a.6,u.a,1.a,9.6,a.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,a.6,a.6,a.6,1.6,1.6,12.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,1.a,2k.6,1.6,1.6,1.6,1.6,7hc.6,a.6,1.6,9.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,3t.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,2w.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,ig.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1v.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,25.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,9.6,1.6,2r.6,1.6,1.6,1.6,25.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,fo.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2l.6,a.6,32.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,4x.6,a.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1q.6,1.6,1.6,1.6,7.6,1.6,9.6,a.6,e6.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,98.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,2z.6,1.6,1.6,d0.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,2d.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5p.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,2y.6,1.6,1.6,1.6,1.6,fq.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,n.6,1.6,3l.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,h.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,w.6,28.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,hn.6,1.6,1.6,1.6,1.6,6.6,1.6,9.6,1.6,1.6,1.6,1.6,10.6,1.6,13.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,2.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,q.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1q.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1d.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,9.6,1.6,9.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,s.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,d2.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1",
+  ".6,q.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,25d.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,7pv.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,rw.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,1i.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,7.5,1.5,1.5,8.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,11.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,8.5,1.5,9.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1b.5,a.5,1.5,1.5,8.5,1.5,1.5,1.5,7.5,1.5,1.5,1w.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,23.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,da.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1h.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,o.5,1.5,1.5,1.5,7.5,1.5,1.5,8.5,a.5,1.5,1.5,1.5,1v.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,5ur.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,ka.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,70v.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,kq.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,715.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,k.5,1.5,1.5,8.5,1.5,1.5,1.5,7.5,1.5,1.5,8.5,1.5,1.5,1.5,7.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,7la.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,9.5,ly.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,70x.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,a.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1a.6,a.6,a.6,1.6,9.6,a.6,1.6,1.6,8.6,1.6,1.6,1.6,7.6,3w.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,9.6,1y.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,h.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,a.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,2s.6,a.6,1.6,1.6,8a.6,9g.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,4d.6,1.6,1.6,8.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,5.6,a.6,a.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,17.6,1.6,1.6,1.6,1.6,1.6,2x.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,ai.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,9.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1c.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,24.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,a.6,1.6,1.6,8.6,1.6,1.6,1.6,1v.6,1e.6,28.6,1.6,1.6,8.6,1.6,1.6,5r6.5,1.5,9.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,x.5,1.5,1.5,1.5,1.5,6.5,j6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,71t.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,8.5,1.5,1.5,1.5,7nh.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,7oj.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,jl.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,2.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,5.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,710.5,1.5,1.5,8.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,p4.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6yg.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,js.5,1.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,f.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,d4v.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1u.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,e.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1cq.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,m8.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,70u.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,k5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,712.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1s.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,13.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,7ij.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,9.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1c.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,4c.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,2y.6,1.6,1.6,1.6,1.6,1.6,ih.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1",
+  ".6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,4t.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3p.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6iw.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,38.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,m.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,bt.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,7w2.5,1.5,1.5,1.5,7.5,1.5,9.5,1.5,9.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,c.5,1.5,13.5,1.5,1.5,1.5,1.5,6.5,a.5,1.5,9.5,a.5,a.5,1e.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,17.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,2c.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,fd.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,12.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1y.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,w.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,10.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1b.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,2d.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1s.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,7m.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3p.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,2d.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,19.6,1.6,1.6,1.6,1.6,1.6,1.6,2w.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,i.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,43.6,1.6,1.6,1.6,7.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,1.6,7q.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,32.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,r.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,l0.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,8.6,1.6,1.6,1c.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,x.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,k2.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,22.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2u.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1a.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,30.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,2z.6,1.6,t.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,8.6,14.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,9.6,1.6,1.6,30.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,2cn.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,jl.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,6.5,1.5,2.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,2.5,1.5,1.5,1.5,1.5,1.5,70x.5,1.5,1.5,8.5,1.5,9.6,1.6,1.6,26.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,2.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,nh.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,19.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,9.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,12.6,a.6,1.6,9.6,a.6,1.6,9.6,1.6,4f.6,1.6,1.6,1.6,7.6,a.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,a.6,1.6,1.6,1.6,1.6,1.6,p.6,1.6,1.6,8.6,1.6,1.6,8.6,a.6,1.6,9.6,1.6,1.6,8.6,a.6,1.6,1.6,1.6,1.6,c4.6,1.6,1.6,2.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1s.5,1.5,1.5,8.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,4a.6,a.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,23.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,ha.6,1.6,9.6,1.6,9.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,o4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1l.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,a.6,1.6,9.6,1.6,1.6,1.6,1.6,4io.5,1.5,1.5,63e.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1gv.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,9s.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,19.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,a.6,1.6,1.6,1.6,7.6,a.6,1.6,1.6,44.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2b.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,4.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,5n.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2u.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1l.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.",
+  "6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1o.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6m7.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,7.5,1.5,1.5,1.5,1.5,7n6.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,2.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,x.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,1.5,1.5,1.5,4.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,1.5,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,3t.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,7.5,a.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,ky.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,22.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1.5,1.5,3.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,1.5,1t.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,k2.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,2f.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,7.6,1.6,1.6,1m.6,1.6,1.6,8.6,1.6,1.6,8.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,z.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,5tc.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,jz.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,72t.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,w.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,9.6,1.6,7m5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,9.6,1.6,1.6,1.6,1.6,6.6,a.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,7.6,1.6,9.6,1.6,1d.6,k.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,p.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,pm.6,1.6,1.6,1.6,1.6,1.6,f.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,9.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,6t3.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2k.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,8.6,1.6,1.6,26.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,ll.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1u.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,2y.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,l7.5,a.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,1.5,7.6,1.6,9.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,y.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2b.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1s.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,ij.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,4w.6,1.6,9.6,a.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,9.6,1o.6,1.6,1.6,8.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,7.6,1.6,1.6,8.6,1.6,9.6,1.6,1.6,f8.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,22.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,m.5,1.5,1.5,1.5,1.5,1.5,5.5,1.5,1.5,1.5,1.5,6.5,1.5,1.5,8.5,1.5,1.5,1w.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,8.6,1.6,1.6,1.6,1.6,1.6,lt.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,3.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,10.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,1.6,22.6,1.6,1.6,1.6,1.6,1.6,1.6,4.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,1.6,2.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,1.6,4b.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,7.6,1.6,1.6,1.6,1.6,6.6,1.6,1.6,1.6,1.6,2y.6,1.6,1.6,1.6,1.6,1.6,5.6,1.6,1.6,1.6"
+].join("");
+
+function getVal(name){
+  const el = form.querySelector(`input[name="${name}"]:checked`);
+  return el ? el.value : null;
+}
+function setChecked(name, value){
+  const el = form.querySelector(`input[name="${name}"][value="${value}"]`);
+  if(el) el.checked = true;
+}
+function clearGroup(name){
+  form.querySelectorAll(`input[name="${name}"]`).forEach(r=>r.checked=false);
+}
+function setGroupDisabled(name, disabled){
+  form.querySelectorAll(`input[name="${name}"]`).forEach(r=>r.disabled = !!disabled);
+}
+function escapeHtml(str){
+  return String(str ?? "")
+    .replaceAll("&","&amp;").replaceAll("<","&lt;").replaceAll(">","&gt;")
+    .replaceAll('"',"&quot;").replaceAll("'","&#039;");
+}
+function setPatternEnabled(enabled){
+  patternBox.classList.toggle("disabled", !enabled);
+  if(!enabled){ clearGroup("pattern"); clearGroup("patternColor"); }
+}
+function enforcePlateRules(){
+  const style = getVal("plateStyle");
+
+  const enableKind = !!style;
+  if(plateKindBox){
+    plateKindBox.classList.toggle("disabled", !enableKind);
+  }
+  setGroupDisabled("plate", !enableKind);
+
+  if(!enableKind){
+    clearGroup("plate");
+    setPatternEnabled(false);
+    return;
+  }
+
+  // 字光式のときは希望図柄を選択不可
+  const isJikou = (style === "字光式");
+  const patternPlateInput = form.querySelector('input[name="plate"][value="希望図柄番号"]');
+  if(patternPlateInput) patternPlateInput.disabled = isJikou;
+
+  const plateNow = getVal("plate");
+  if(isJikou && plateNow === "希望図柄番号"){
+    clearGroup("plate");
+  }
+
+  const plate = getVal("plate");
+  const needPattern = (plate === "希望図柄番号" && style === "ペイント");
+  setPatternEnabled(needPattern);
+}
+
+/** ===== 地域により基準府県＆背景色を切替 ===== **/
+function getBasePrefByRegion(){
+  return (getVal("region") === "HC南京都") ? "京都府" : "奈良県";
+}
+function applyBackgroundByRegion(){
+  const region = getVal("region") || "HC奈良中央";
+  const bg = (region === "HC南京都") ? "#bfe8ff" : "#fbf6b8";
+  document.documentElement.style.setProperty("--bg", bg);
+}
+function setRuleHint(){
+  const region = getVal("region") || "HC奈良中央";
+  const base = getBasePrefByRegion();
+  if(region === "HC南京都"){
+    ruleHint.innerHTML =
+      `現在：<span class="pillTitle"><b>HC南京都</b></span><br>
+       ・普通車は<strong>すべて書類代行</strong><br>
+       ・軽自動車も<strong>すべて書類代行</strong><br>
+       ・県外判定：<strong>${base}以外</strong>は県外費用 10,000円`;
+  } else {
+    ruleHint.innerHTML =
+      `現在：<span class="pillTitle"><b>HC奈良中央</b></span><br>
+       ・普通車＋奈良県は<strong>OSS自動選択</strong><br>
+       ・軽自動車は<strong>すべて書類代行</strong><br>
+       ・県外判定：<strong>${base}以外</strong>は県外費用 10,000円`;
+  }
+}
+
+/** ===== 申請方法ルール ===== **/
+function updateApplyRules(){
+  const car = getVal("car");
+  const pref = getVal("pref");
+  const region = getVal("region") || "HC奈良中央";
+  const basePref = getBasePrefByRegion();
+
+  applyBackgroundByRegion();
+  setRuleHint();
+
+  if(!car || !pref){
+    applyOSS.disabled = false;
+    applyOSSLabel.classList.remove("disabled");
+    applyLockNote.style.display = "none";
+    return;
+  }
+
+  const isBase = (pref === basePref);
+  let lockMsg = "";
+
+  if(region === "HC南京都"){
+    applyOSS.disabled = true;
+    applyOSSLabel.classList.add("disabled");
+    setChecked("apply","書類代行");
+    lockMsg = "※HC南京都：普通車・軽自動車とも書類代行固定";
+  } else {
+    if(car === "軽自動車"){
+      applyOSS.disabled = true;
+      applyOSSLabel.classList.add("disabled");
+      setChecked("apply","書類代行");
+      lockMsg = "※HC奈良中央：軽自動車は書類代行固定";
+    } else {
+      if(isBase){
+        applyOSS.disabled = false;
+        applyOSSLabel.classList.remove("disabled");
+        setChecked("apply","OSS");
+        lockMsg = "※HC奈良中央：普通車＋奈良県はOSSを自動選択";
+      } else {
+        applyOSS.disabled = true;
+        applyOSSLabel.classList.add("disabled");
+        setChecked("apply","書類代行");
+        lockMsg = "※HC奈良中央：普通車で奈良県以外は書類代行固定（県外費用10,000円加算）";
+      }
+    }
+  }
+
+  applyLockNote.style.display = lockMsg ? "block" : "none";
+  applyLockNote.textContent = lockMsg;
+}
+
+function updateConditionalUI(){
+  const trade = getVal("trade");
+  const owner = getVal("owner");
+
+  updateApplyRules();
+  enforcePlateRules();
+
+  
+  updateInspectUI();
+if(trade === "なし"){
+    clearGroup("owner"); clearGroup("loan");
+    setGroupDisabled("owner", true);
+    setGroupDisabled("loan", true);
+    ownerBox.classList.add("disabled");
+    loanBox.classList.add("disabled");
+    return;
+  }
+
+  setGroupDisabled("owner", false);
+  ownerBox.classList.remove("disabled");
+
+  if(owner === "お客様"){
+    clearGroup("loan");
+    setGroupDisabled("loan", true);
+    loanBox.classList.add("disabled");
+  } else if(owner === "信販会社"){
+    setGroupDisabled("loan", false);
+    loanBox.classList.remove("disabled");
+  } else {
+    clearGroup("loan");
+    setGroupDisabled("loan", true);
+    loanBox.classList.add("disabled");
+  }
+}
+
+
+/** ========= 点検パック UI ========= **/
+function getAutoVehicleClass(){
+  const car = getVal("car");
+  return (car === "軽自動車") ? "kei" : "small"; // 普通車は小型(1500cc以下)として扱う
+}
+
+function autoMamoruFromVehicleClass(vClass){
+  // 車両区分に応じてマモルのデフォルトを自動選択（任意：必要なら「選択解除」でOFF可）
+  switch(vClass){
+    case "kei": return "m660";
+    case "cargo": return "mcargo";
+    case "small": return "m661_1500";
+    case "mid": return "m1501_2000";
+    case "normal": return "m2001";
+    default: return "none";
+  }
+}
+
+function syncMamoruByVehicleClass(){
+  if(!inspectVehicleClassEl || !mamoruClassEl) return;
+  const raw = inspectVehicleClassEl.value || "auto";
+  const vClass = (raw === "auto") ? getAutoVehicleClass() : raw;
+  const autoVal = autoMamoruFromVehicleClass(vClass);
+  mamoruClassEl.value = autoVal;
+  mamoruClassEl.dataset.userSelected = "0";
+}
+
+function setSelectOptions(selectEl, options, keepValue=true){
+  if(!selectEl) return;
+  const prev = selectEl.value;
+  selectEl.innerHTML = options.map(o=>`<option value="${escapeHtml(o.value)}">${escapeHtml(o.label)}</option>`).join("");
+  if(keepValue){
+    const hasPrev = [...selectEl.options].some(op=>op.value===prev);
+    if(hasPrev) selectEl.value = prev;
+  }
+}
+
+function updateInspectUI(){
+  const packType = getVal("inspectPackType") || "なし";
+  const vClassRaw = inspectVehicleClassEl?.value || "auto";
+  const vClass = (vClassRaw === "auto") ? getAutoVehicleClass() : vClassRaw;
+
+  const disabled = (packType === "なし");
+  if(inspectCourseEl) inspectCourseEl.disabled = disabled;
+  if(inspectVehicleClassEl) inspectVehicleClassEl.disabled = false; // 自動/手動を選べるように常に有効
+  if(mamoruClassEl) mamoruClassEl.disabled = false; // 任意
+
+  if(disabled){
+    setSelectOptions(inspectCourseEl, [{value:"", label:"（未選択）"}], false);
+    return;
+  }
+
+  // コース候補を更新
+  if(packType === "フルカバ"){
+    if(vClass === "cargo"){
+      setSelectOptions(inspectCourseEl, [
+        {value:"", label:"（未選択）"},
+        {value:"LS", label:"LS"},
+        {value:"LT", label:"LT"},
+        {value:"3S", label:"3S"},
+        {value:"3T", label:"3T"}
+      ]);
+    }else{
+      setSelectOptions(inspectCourseEl, [
+        {value:"", label:"（未選択）"},
+        {value:"LS", label:"LS"},
+        {value:"LT", label:"LT"},
+        {value:"5S", label:"5S"},
+        {value:"5T", label:"5T"}
+      ]);
+    }
+  } else if(packType === "チャオ"){
+    // チャオは軽貨物の表がないため、軽貨物を選んでいたら自動に戻す
+    if(vClassRaw === "cargo"){
+      if(inspectVehicleClassEl) inspectVehicleClassEl.value = "auto";
+    }
+    // 車両区分を戻した場合、マモルも合わせて自動選択
+    syncMamoruByVehicleClass();
+    setSelectOptions(inspectCourseEl, [
+      {value:"", label:"（未選択）"},
+      {value:"LS", label:"LS"},
+      {value:"LT", label:"LT"},
+      {value:"5S", label:"5S"},
+      {value:"5T", label:"5T"},
+      {value:"4S", label:"4S"},
+      {value:"4T", label:"4T"},
+      {value:"3S", label:"3S"},
+      {value:"3T", label:"3T"},
+      {value:"2S", label:"2S"},
+      {value:"2T", label:"2T"},
+      {value:"1S", label:"1S"},
+      {value:"SS", label:"SS"}
+    ]);
+  } else {
+    setSelectOptions(inspectCourseEl, [{value:"", label:"（未選択）"}], false);
+  }
+}
+
+/** ========= 郵便番号→車庫証明（必要/不要）自動判定 ========= **/
+let ZIP_MASK_MAP = null;
+function fromBase36(s){ return parseInt(s, 36); }
+
+function buildZipMaskMap(){
+  const map = new Map();
+  if(!ZIP_MASK_DATA) return map;
+  let prev = 0;
+  const parts = ZIP_MASK_DATA.split(",");
+  for(const token of parts){
+    if(!token) continue;
+    const [d36, mh] = token.split(".");
+    if(!d36 || !mh) continue;
+    const delta = fromBase36(d36);
+    const mask = parseInt(mh, 16);
+    const zip = prev + delta;
+    prev = zip;
+    map.set(zip, mask);
+  }
+  return map;
+}
+
+function normalizeZip(raw){
+  return String(raw || "").trim().replace(/[^\d]/g, "");
+}
+function formatZipForView(zipDigits){
+  if(zipDigits.length <= 3) return zipDigits;
+  return zipDigits.slice(0,3) + "-" + zipDigits.slice(3,7);
+}
+
+function applyShakoFromZip({recalc=false} = {}){
+  if(!zipEl) return;
+
+  if(!ZIP_MASK_MAP){
+    ZIP_MASK_MAP = buildZipMaskMap();
+  }
+
+  const digits = normalizeZip(zipEl.value).slice(0,7);
+  zipEl.value = formatZipForView(digits);
+
+  if(digits.length !== 7){
+    if(zipStatusEl){
+      zipStatusEl.textContent = "郵便番号を7桁入力すると自動判定します。";
+      zipStatusEl.style.color = "#5b6470";
+    }
+    return;
+  }
+
+  const car = getVal("car");
+  if(!car){
+    if(zipStatusEl){
+      zipStatusEl.textContent = `郵便番号（${digits}）は入力済みです。①車種（普通車/軽）を選ぶと自動判定します。`;
+      zipStatusEl.style.color = "#5b6470";
+    }
+    return;
+  }
+
+  const zipNum = parseInt(digits, 10);
+  const mask = ZIP_MASK_MAP.get(zipNum);
+
+  if(!mask){
+    if(zipStatusEl){
+      zipStatusEl.textContent = `この郵便番号（${digits}）は判定表にありません。車庫証明は手動で選択してください。`;
+      zipStatusEl.style.color = "#5b6470";
+    }
+    return;
+  }
+
+  let result = null;
+  if(car === "軽自動車"){
+    if(mask & 1) result = "必要";
+    else if(mask & 2) result = "不要";
+  }else{
+    if(mask & 4) result = "必要";
+    else if(mask & 8) result = "不要";
+  }
+
+  if(result){
+    setChecked("shakoNeed", result);
+    if(zipStatusEl){
+      zipStatusEl.textContent = `判定：車庫証明は「${result}」として自動入力しました（${digits}）`;
+      zipStatusEl.style.color = "#1b7f2a";
+    }
+    if(recalc) calc();
+  }else{
+    if(zipStatusEl){
+      zipStatusEl.textContent = `郵便番号（${digits}）は見つかりましたが、判定が不明です。手動で選択してください。`;
+      zipStatusEl.style.color = "#5b6470";
+    }
+  }
+}
+
+/** ========= 表示用 ========= **/
+function buildRowCard(label, yen, memo){
+  return `
+    <div class="row">
+      <div class="rowHeader">
+        <div class="label">${escapeHtml(label)}</div>
+        <div class="yen">${yen ? yenFmt(yen) : "-"}</div>
+      </div>
+      ${memo ? `<div class="memo">${escapeHtml(memo)}</div>` : ``}
+    </div>
+  `;
+}
+function buildSection(title){
+  return `<div class="row sec"><div class="label">${escapeHtml(title)}</div></div>`;
+}
+function buildSub(label, yen){
+  return `
+    <div class="row sub">
+      <div class="rowHeader">
+        <div class="label">${escapeHtml(label)}</div>
+        <div class="yen">${yenFmt(yen)}</div>
+      </div>
+    </div>
+  `;
+}
+
+/** ========= 計算 ========= **/
+function calc(){
+  updateConditionalUI();
+  // zipが入っていれば、車種変更などでも判定反映
+  applyShakoFromZip({recalc:false});
+
+  const basePref = getBasePrefByRegion();
+
+  const car = getVal("car");
+  const pref = getVal("pref");
+  const shakoNeed = getVal("shakoNeed");
+  const apply = getVal("apply");
+  const plateStyle = getVal("plateStyle");
+  const plate = getVal("plate");
+  const pattern = getVal("pattern");
+  const patternColor = getVal("patternColor");
+  const trade = getVal("trade");
+  const owner = getVal("owner");
+  const loan = getVal("loan");
+  const isEV = !!document.getElementById("isEV")?.checked;
+
+  // 点検パック
+  const inspectPackType = getVal("inspectPackType") || "なし";
+  const inspectVehicleRaw = inspectVehicleClassEl?.value || "auto";
+  const inspectVehicle = (inspectVehicleRaw === "auto") ? getAutoVehicleClass() : inspectVehicleRaw;
+  const inspectCourse = inspectCourseEl?.value || "";
+  const mamoruClass = mamoruClassEl?.value || "none";
+
+  let inspectFee = 0;
+  let inspectMemo = "";
+  if(inspectPackType !== "なし" && inspectCourse){
+    if(inspectPackType === "フルカバ"){
+      if(inspectVehicle === "cargo"){
+        inspectFee = INSPECT_PACK["フルカバ"].cargo?.[inspectCourse] ?? 0;
+      }else{
+        inspectFee = INSPECT_PACK["フルカバ"].normal?.[inspectCourse]?.[inspectVehicle] ?? 0;
+      }
+    } else if(inspectPackType === "チャオ"){
+      if(inspectVehicle === "cargo"){
+        inspectFee = 0; // 価格表なし
+      } else {
+        inspectFee = INSPECT_PACK["チャオ"]?.[inspectCourse]?.[inspectVehicle] ?? 0;
+      }
+    }
+    const vLabelMap = { kei:"軽自動車", cargo:"軽貨物", small:"小型(1500cc以下)", mid:"中型(1501cc以上)", normal:"普通車(3ナンバー)" };
+    inspectMemo = `${inspectPackType} ${inspectCourse} / ${vLabelMap[inspectVehicle] || inspectVehicle}`;
+    if(inspectVehicleRaw === "auto") inspectMemo += "（車種から自動）";
+    if(inspectPackType === "チャオ" && inspectVehicle === "cargo") inspectMemo += "（軽貨物は価格表なし）";
+  }
+
+  const mamoruFee = MAMORU_FEE[mamoruClass] ?? 0;
+  let mamoruMemo = "";
+
+  const puncturePlan = (puncturePlanEl && puncturePlanEl.value) ? puncturePlanEl.value : "none";
+  const punctureFee = PUNCTURE_FEE[puncturePlan] ?? 0;
+  let punctureMemo = "";
+  if(punctureFee){
+    const pLabelMap = { p50:"３年５万円", p100:"３年１０万円", p150:"３年１５万円" };
+    punctureMemo = `パンク保証 ${pLabelMap[puncturePlan] || ""}`;
+  }
+  if(mamoruFee){
+    const mLabelMap = {
+      m660:"660cc以下",
+      m661_1500:"661〜1500cc",
+      m1501_2000:"1501〜2000cc",
+      m2001:"2001cc以上",
+      mcargo:"軽貨物"
+    };
+    mamoruMemo = `マモル ${mLabelMap[mamoruClass] || ""}`;
+  }
+
+
+  const needPattern = (plate === "希望図柄番号");
+
+  const required = ["region","car","pref","shakoNeed","apply","plateStyle","plate","trade"];
+  if(trade === "あり") required.push("owner");
+  if(trade === "あり" && owner === "信販会社") required.push("loan");
+  if(needPattern){ required.push("pattern"); required.push("patternColor"); }
+
+  const missing = required.filter(k => !getVal(k));
+  if(missing.length){
+    statusText.textContent = "未選択があります（必須項目を選択してください）";
+    statusText.style.color = "#b00020";
+  } else {
+    statusText.textContent = "計算OK";
+    statusText.style.color = "#1b7f2a";
+  }
+
+  const typeKey = typeKeyFromCar(car);
+  const isBase = (pref === basePref);
+  const isOut = !!pref && !isBase;
+
+  const rows = [];
+  const push = (label, yen, note="", taxable=true)=> rows.push({label, yen:Number(yen||0), note, taxable});
+
+  // 登録代行費用
+  if(apply){
+    let base = APPLY_FEE[apply] ?? 0;
+    if(isOut){
+      base += KENGAI_FEE;
+      push("登録代行費用", base, `（県外費用 10,000円含む：基準=${basePref}）`, true);
+    } else {
+      push((apply === "OSS" ? "OSS申請代行費用" : "登録代行費用"), base, `（基準=${basePref}）`, true);
+    }
+  }
+
+  // 車庫証明
+  if(shakoNeed === "必要"){
+    // OSSの場合、車庫証明代行費用はOSS申請代行費用に含まれるため表示しない
+    if(apply !== "OSS"){
+      if(car === "軽自動車"){
+        push("車庫証明代行費用", 6200, "（軽自動車）", true);
+      } else {
+        push("車庫証明代行費用", 16800, "", true);
+      }
+    }
+    push("納車費用（EVは1000円）", (isEV ? DELIVERY_FEE_EV : DELIVERY_FEE), (isEV ? "（EV）" : ""), true);
+
+    // 参考項目（課税分・表示のみ）
+    push("下取車査定費用", null, "", true);
+    push("自動車税未経過相当額", null, "", true);
+    push("自賠責未経過相当額", null, "", true);
+    const sh = SHAKO_SHOSHI?.[pref]?.[typeKey];
+    push("車庫証紙", sh ?? 0, "", false);
+  } else {
+    if(apply !== "OSS"){ push("車庫証明代行費用", 0, "", true); }
+    push("納車費用（EVは1000円）", (isEV ? DELIVERY_FEE_EV : DELIVERY_FEE), (isEV ? "（EV）" : ""), true);
+    push("車庫証紙", 0, "", false);
+  }
+
+  // 参考項目（常に表示・金額は「-」）
+// 普通車は登録証紙を検査・登録・届出費用に合算（OSS/書類代行で差）
+  const regStampToMerge =
+    (car === "普通車" && apply)
+      ? (apply === "OSS" ? REG_STAMP["OSS"] : REG_STAMP["小型"])
+      : 0;
+
+  let patternDonation = 0;
+  const plateTable = (plateStyle === "字光式") ? PLATE_JIKOU : PLATE_PAINT;
+  const plateRow = plateTable?.[typeKey]?.[pref] ?? null;
+
+  let keiHyobanFee = 0;
+  let keiHyobanNote = "";
+
+  const addPlate = (label, baseValue, noteBase="")=>{
+    const mergedOrig = (baseValue ?? 0) + (regStampToMerge || 0);
+
+    // 軽自動車の場合：
+    // - 検査・登録・届出費用は常に 1,900円 表示
+    // - 本来の金額（mergedOrig）は「軽標板代」に表示
+    if(car === "軽自動車"){
+      keiHyobanFee = mergedOrig;
+      keiHyobanNote = noteBase || "";
+      const note = "（軽：検査・登録・届出費用は1,900円固定）";
+      push(label, 1900, note, false);
+      return;
+    }
+
+    const note = (car === "普通車" && apply && regStampToMerge)
+      ? `（登録証紙 ${yenFmt(regStampToMerge)}円を合算）`
+      : noteBase;
+    push(label, mergedOrig, note, false);
+  };
+
+  let hopeNumberFee = 0;
+  let hopeNumberNote = "";
+
+  if(plate === "一般番号"){
+    const v = plateRow?.["一般番号"];
+    addPlate(`検査・登録・届出費用（${plateStyle}・一般番号）`, v ?? 0, v==null ? "（金額未設定）" : "");
+  }
+  if(plate === "希望番号"){
+    const v = plateRow?.["希望番号"];
+    addPlate(`検査・登録・届出費用（${plateStyle}・希望番号）`, v ?? 0, v==null ? "（金額未設定）" : "");
+        // 希望番号手数料（希望）
+    hopeNumberFee = (HOPE_FEE[typeKey] ?? 0);
+    hopeNumberNote = "";
+}
+  if(plate === "希望図柄番号"){
+    const pRow = PLATE_PAINT?.[typeKey]?.[pref] ?? null;
+    const v = pRow?.[pattern];
+    addPlate(`検査・登録・届出費用（ペイント・図柄：${pattern}）`, v ?? 0, v==null ? "（金額未設定）" : "");
+    // 希望図柄番号の手数料（図柄）
+    hopeNumberFee = (PATTERN_FEE[typeKey] ?? 0);
+    hopeNumberNote = `（図柄：${pattern}）`;
+patternDonation = (patternColor === "カラー") ? PATTERN_DONATION : 0;
+}
+
+
+  // 軽自動車の場合：軽標板代に「検査・登録・届出費用（…）」で算出された元金額を表示
+  if(car === "軽自動車"){
+    push("軽標板代", keiHyobanFee, keiHyobanNote, true);
+  }
+
+
+  // 希望番号手数料（希望/図柄）は表示テンプレで1行に統一
+  push("希望番号手数料（希望）", hopeNumberFee, hopeNumberNote, true);
+
+  if(plateStyle === "字光式"){
+    push("字光式器具（税込）", JIKOU_TOOL, "", true);
+  }
+
+  // 下取り（下取証紙は表示/計上しない）
+  if(trade === "あり"){
+    if(owner === "信販会社") push("下取車手続代行費用", TRADEIN_DAIKO, "", true);
+    else push("下取車手続代行費用", 0, "（所有権お客様：該当なし扱い）", true);
+    push("下取車諸手続", TRADEIN_PROC, "", false);
+  } else {
+    push("下取車手続代行費用", 0, "（下取りなし）", true);
+    push("下取車諸手続", 0, "（下取りなし）", false);
+  }
+
+  // R発行費用 +（必要時）残債手数料を合算して1行
+  const loanFeeForMerge =
+    (trade === "あり" && owner === "信販会社" && loan === "あり")
+      ? LOAN_FEE
+      : 0;
+
+  const mergedFee = R_ISSUE + loanFeeForMerge;
+  const mergedNote = loanFeeForMerge ? `（残債手数料 ${yenFmt(loanFeeForMerge)}円を合算）` : "";
+  push("R発行費用/振込手数料", mergedFee, mergedNote, true);
+
+  // 並び順（算出結果の表示用）
+  const orderOf = (label)=>{
+    // 軽自動車の場合：車庫証明代行費用を登録代行費用の上に表示
+    if(car === "軽自動車" && label.startsWith("車庫証明代行費用")) return 9;
+    if(car === "軽自動車" && (label.startsWith("登録代行費用") || label.startsWith("OSS申請代行費用"))) return 10;
+
+    if(label.startsWith("登録代行費用")) return 10;
+    if(label.startsWith("OSS申請代行費用")) return 19;
+    if(label.startsWith("車庫証明代行費用")) return 20;
+    if(label.startsWith("下取車手続代行費用")) return 22;
+    if(label.startsWith("納車費用")) return 26;
+    if(label.startsWith("車庫証紙")) return 10;
+    if(label.startsWith("希望番号手数料（希望）")) return 50;
+    if(label.startsWith("希望番号手数料（図柄）")) return 60;
+    if(label.startsWith("図柄寄付金")) return 65;
+    if(label.startsWith("字光式器具")) return 70;
+        if(label.startsWith("下取車諸手続")) return 30;
+    if(label.startsWith("R発行費用/振込手数料")) return 90;
+    if(label.startsWith("検査・登録・届出費用")) return 20; // 下取り諸費用と車庫証紙の間
+    return 999;
+  };
+  rows.sort((a,b)=> orderOf(a.label) - orderOf(b.label));
+
+  // 集計
+
+  // 点検関連（点検パック/マモル/パンク保証）を非課税にまとめて表示
+  const bundleParts = [];
+  // 点検パック
+  if((getVal("inspectPackType") || "なし") !== "なし"){
+    if(inspectCourse){
+      bundleParts.push(`点検パック:${inspectMemo} ${yenFmt(inspectFee)}円`);
+    } else {
+      bundleParts.push(`点検パック:${getVal("inspectPackType")}（コース未選択）`);
+    }
+  } else {
+    bundleParts.push("点検パック:なし");
+  }
+  // マモル
+  if(mamoruClass !== "none"){
+    bundleParts.push(`マモル:${mamoruMemo || "選択"} ${yenFmt(mamoruFee)}円`);
+  } else {
+    bundleParts.push("マモル:なし");
+  }
+  // パンク保証
+  if(puncturePlan !== "none"){
+    bundleParts.push(`パンク保証:${punctureMemo || "選択"} ${yenFmt(punctureFee)}円`);
+  } else {
+    bundleParts.push("パンク保証:なし");
+  }
+
+  if((patternDonation||0) > 0){
+    bundleParts.push(`寄付:${yenFmt(patternDonation)}円`);
+  }
+
+  const inspectBundleFee = (inspectFee||0) + (mamoruFee||0) + (punctureFee||0) + (patternDonation||0);
+  const inspectBundleNote = bundleParts.join(" / ");
+
+  // 何か選択されたら表示（全て「なし」の場合は表示しない）
+  if(inspectBundleFee > 0 || (getVal("inspectPackType") || "なし") !== "なし" || mamoruClass !== "none" || puncturePlan !== "none"){
+    push("点検関連（点検パック/マモル/パンク保証）", inspectBundleFee, inspectBundleNote, false);
+  }
+
+  const taxable = rows.filter(r=>r.taxable);
+  const nontax  = rows.filter(r=>!r.taxable);
+  const taxSumBase = taxable.reduce((a,b)=>a+b.yen,0);
+  const nonSum = nontax.reduce((a,b)=>a+b.yen,0);
+  const taxSum = taxSumBase;
+  const total  = taxSum + nonSum;
+
+  totalYenEl.textContent = yenFmt(total);
+  nontaxEl.textContent   = yenFmt(nonSum);
+
+    // 表示：申請方法（OSS/書類代行）でテンプレート切替（項目は固定表示、金額だけ反映）
+  const rowMap = new Map();
+  rows.forEach(r=> rowMap.set(r.label, r));
+
+  const getRow = (sourceLabel, displayLabel=null, taxableDefault=true, noteDefault="")=>{
+    const r = rowMap.get(sourceLabel);
+    const label = displayLabel ?? sourceLabel;
+    if(r) return { label, yen: r.yen, note: r.note, taxable: taxableDefault };
+    return { label, yen: 0, note: noteDefault, taxable: taxableDefault };
+  };
+
+  const getRowByPrefix = (prefix, displayLabel, taxableDefault=false)=>{
+    const r = rows.find(x => (x.label||"").startsWith(prefix));
+    if(r) return { label: displayLabel, yen: r.yen, note: r.note, taxable: taxableDefault };
+    return { label: displayLabel, yen: 0, note: "", taxable: taxableDefault };
+  };
+
+  const taxableTemplate = (apply === "OSS") ? [
+    getRow("OSS申請代行費用"),
+    getRow("証明書管理業者利用料", "証明書管理業者利用料", true),
+    getRow("下取車手続代行費用"),
+    getRow("納車費用（EVは1000円）", "納車費用"),
+    getRow("下取車査定費用", "下取車査定料"),
+    getRow("自動車税未経過相当額"),
+    getRow("自賠責未経過相当額"),
+    getRow("入力サポート", "入力サポート", true),
+    getRow("希望番号手数料（希望）", "希望番号手数料"),
+    getRow("R発行費用/振込手数料"),
+    getRow("軽標板代", "軽標板代", true)
+  ] : [
+    getRow("車庫証明代行費用"),
+    getRow("登録代行費用", "検査登録届出代行費用"),
+    getRow("下取車手続代行費用"),
+    getRow("納車費用（EVは1000円）", "納車費用"),
+    getRow("下取車査定費用", "下取車査定料"),
+    getRow("自動車税未経過相当額"),
+    getRow("自賠責未経過相当額"),
+    getRow("入力サポート", "入力サポート", true),
+    getRow("R発行費用/振込手数料"),
+    getRow("希望番号手数料（希望）", "希望番号手数料"),
+    getRow("軽標板代", "軽標板代", true)
+  ];
+
+
+  // 点検関連ラベル（コース・マモル・パンクの選択に応じて表示名を自動生成）
+  const buildInspectLabel = ()=>{
+    const parts = [];
+    const packType = (form.querySelector('input[name="inspectPackType"]:checked')?.value) || "なし";
+    const course = (document.getElementById("inspectCourse")?.value || "").trim(); // 5S/5T/LS/LT など
+    const mamoru = (document.getElementById("mamoruClass")?.value) || "none";
+    const puncture = (document.getElementById("puncturePlan")?.value) || "none";
+
+    // 点検パック（フル/チャオ）＋コース
+    if(packType !== "なし" && course){
+      const prefix = (packType === "フルカバ") ? "フル" : (packType === "チャオ" ? "チャオ" : packType);
+      parts.push(prefix + course);
+    }
+
+    // マモル
+    if(mamoru !== "none"){ parts.push("マモル"); }
+
+    // パンク
+    if(puncture !== "none"){ parts.push("パンク"); }
+
+    return parts.length ? parts.join("/") : "点検関連";
+  };
+  const inspectLabel = buildInspectLabel();
+
+  const nontaxTemplate = [
+    getRow("車庫証紙", "車庫証紙", false),
+    getRowByPrefix("検査・登録・届出費用", "検査・登録・届出費用", false),
+    getRow("下取車諸手続", "下取車諸手続", false),
+    getRow("リサイクル法関連費用", "リサイクル法関連費用", false),
+    getRow("預り車庫証明", "預り車庫証明", false),
+    getRow("点検関連（点検パック/マモル/パンク保証）", inspectLabel, false)
+  ];
+
+  // Mobile cards
+  let html = "";
+  html += buildSection("課税分");
+  taxableTemplate.forEach(r=> html += buildRowCard(r.label, r.yen, r.note));
+  html += buildSub("課税分小計", taxSum);
+
+  html += buildSection("非課税分");
+  nontaxTemplate.forEach(r=> html += buildRowCard(r.label, r.yen, r.note));
+  html += buildSub("非課税分小計", nonSum);
+  rowsEl.innerHTML = html;
+
+  // Desktop table
+  tbody.innerHTML = "";
+  const addTr = (label, yen, note)=> {
+    tbody.insertAdjacentHTML("beforeend",
+      `<tr><td>${escapeHtml(label)}</td><td class="yen">${yen?yenFmt(yen):"-"}</td><td>${escapeHtml(note||"")}</td></tr>`
+    );
+  };
+  const addSec = (t)=> tbody.insertAdjacentHTML("beforeend",
+    `<tr><td colspan="3" style="background:#f3f6ff;font-weight:900;">${escapeHtml(t)}</td></tr>`
+  );
+  const addSubRow = (t, y)=> tbody.insertAdjacentHTML("beforeend",
+    `<tr><td style="background:#e8f1ff;font-weight:900;">${escapeHtml(t)}</td><td class="yen" style="background:#e8f1ff;font-weight:900;">${yenFmt(y)}</td><td style="background:#e8f1ff;"></td></tr>`
+  );
+
+  addSec("課税分");
+  taxableTemplate.forEach(r=> addTr(r.label, r.yen, r.note));
+  addSubRow("課税分小計", taxSum);
+
+  addSec("非課税分");
+  nontaxTemplate.forEach(r=> addTr(r.label, r.yen, r.note));
+  addSubRow("非課税分小計", nonSum);
+}
+
+// ①車種（普通車/軽自動車）に連動して、⑩点検パックの車両区分を自動設定
+function syncInspectVehicleByCar(){
+  if(!inspectVehicleClassEl) return;
+  const car = getVal("car") || "";
+  if(car === "軽自動車"){
+    // ユーザーが手動で変えていても、軽自動車選択時は「軽自動車」に合わせる
+    inspectVehicleClassEl.value = "kei";
+    inspectVehicleClassEl.dataset.autoByCar = "1";
+    // 車両区分に合わせてマモルも同期
+    if(typeof syncMamoruByVehicleClass === "function") syncMamoruByVehicleClass();
+  } else {
+    // 軽→普通車に戻した時、車種連動で設定していた場合のみ「自動」に戻す
+    if(inspectVehicleClassEl.dataset.autoByCar === "1"){
+      inspectVehicleClassEl.value = "auto";
+      delete inspectVehicleClassEl.dataset.autoByCar;
+      if(typeof syncMamoruByVehicleClass === "function") syncMamoruByVehicleClass();
+    }
+  }
+}
+
+// 車種変更時に実行
+document.querySelectorAll('input[name="car"]').forEach(el=>{
+  el.addEventListener("change", ()=>{ syncInspectVehicleByCar(); calc(); });
+});
+
+// マモル選択解除ボタン
+if(mamoruClearBtn){
+  mamoruClearBtn.addEventListener("click", ()=>{
+    if(mamoruClassEl){
+      mamoruClassEl.value = "none";
+      mamoruClassEl.dataset.userSelected = "1";
+    }
+    calc();
+  });
+}
+
+form.addEventListener("change", calc);
+
+if(zipEl){
+  zipEl.addEventListener("input", ()=> applyShakoFromZip({recalc:true}));
+  zipEl.addEventListener("blur",  ()=> applyShakoFromZip({recalc:true}));
+}
+
+// 初期表示
+applyBackgroundByRegion();
+setRuleHint();
+calc();
+
+/** ========= ページ切替 ========= **/
+const pageFee = document.getElementById("pageFee");
+const pageRefund = document.getElementById("pageRefund");
+const refundBtn = document.getElementById("refundBtn");
+const backToFeeBtn = document.getElementById("backToFeeBtn");
+
+function showRefundPage(){
+  pageFee.style.display = "none";
+  pageRefund.style.display = "block";
+  // 画面表示と同時に最新状態へ（自動計算も含む）
+  try{
+    updateRtUi();
+    updateFirstDisplay();
+    calcRefund();
+  }catch(e){}
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function showFeePage(){
+  pageRefund.style.display = "none";
+  pageFee.style.display = "block";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+refundBtn?.addEventListener("click", showRefundPage);
+backToFeeBtn?.addEventListener("click", showFeePage);
+
+/** ========= 自動車税（種別割）還付計算 ========= **/
+const rtCarRadios = document.querySelectorAll('input[name="rt_car"]');
+const rtEngineBox = document.getElementById("rt_engineBox");
+const rtEngine = document.getElementById("rt_engine");
+const rtIsSurcharge = document.getElementById("rt_isSurcharge");
+const rtCancelMonth = document.getElementById("rt_cancelMonth");
+const rtCalcBtn = document.getElementById("rt_calcBtn");
+const rtClearBtn = document.getElementById("rt_clearBtn");
+
+const rtRefundYen = document.getElementById("rt_refundYen");
+const rtStatus = document.getElementById("rt_status");
+const rtAnnualYen = document.getElementById("rt_annualYen");
+const rtAnnualMemo = document.getElementById("rt_annualMemo");
+const rtMonthsEl = document.getElementById("rt_months");
+const rtBurdenYen = document.getElementById("rt_burdenYen");
+
+
+
+const rtBurdenTopYen = document.getElementById("rt_burdenTopYen");
+const rtFirstYear = document.getElementById("rt_firstYear");
+const rtFirstMonth = document.getElementById("rt_firstMonth");
+const rtFirstDisplay = document.getElementById("rt_firstDisplay");
+
+// 和暦表示（簡易）：選択した西暦・月から元号年を算出
+function jpEraLabel(year, month){
+  const d = new Date(year, month - 1, 1);
+  const eras = [
+    { name:"令和", start:new Date(2019, 4, 1), startYear:2019 },
+    { name:"平成", start:new Date(1989, 0, 8), startYear:1989 },
+    { name:"昭和", start:new Date(1926,11,25), startYear:1926 },
+    { name:"大正", start:new Date(1912, 6,30), startYear:1912 },
+    { name:"明治", start:new Date(1868, 0,25), startYear:1868 },
+  ];
+  for(const e of eras){
+    if(d >= e.start){
+      const yInEra = year - e.startYear + 1;
+      const yStr = (yInEra === 1) ? "元" : String(yInEra);
+      return `${e.name}${yStr}年`;
+    }
+  }
+  return "";
+}
+
+function buildYearOptions(){
+  if(!rtFirstYear) return;
+  const now = new Date();
+  const currentY = now.getFullYear();
+  const startY = 1980;
+  let out = "";
+  for(let y=currentY; y>=startY; y--){
+    const era = jpEraLabel(y, 1);
+    out += `<option value="${y}">${y}年（${era}）</option>`;
+  }
+  rtFirstYear.innerHTML = out;
+}
+
+function buildMonthOptions(){
+  if(!rtFirstMonth) return;
+  let out = "";
+  for(let m=1; m<=12; m++){
+    out += `<option value="${m}">${m}月</option>`;
+  }
+  rtFirstMonth.innerHTML = out;
+}
+
+function updateFirstDisplay(){
+  if(!rtFirstYear || !rtFirstMonth || !rtFirstDisplay) return;
+  const y = parseInt(rtFirstYear.value, 10);
+  const m = parseInt(rtFirstMonth.value, 10);
+  const era = jpEraLabel(y, m);
+  rtFirstDisplay.textContent = `${y}年${m}月（${era}${m}月）`;
+
+  // 初年度登録から13年以上経過 → 自動的に重課を適用
+  const now = new Date();
+  const ageMonths = (now.getFullYear() - y) * 12 + ((now.getMonth() + 1) - m);
+  rtIsSurcharge.checked = (ageMonths >= 13 * 12);
+  // 入力変更時は自動で再計算
+  try{ calcRefund(); }catch(e){} 
+}
+
+if(rtFirstYear && rtFirstMonth){
+  buildYearOptions();
+  buildMonthOptions();
+  const now = new Date();
+  rtFirstYear.value = String(now.getFullYear());
+  rtFirstMonth.value = String(now.getMonth() + 1);
+    updateFirstDisplay();
+  rtFirstYear.addEventListener("change", updateFirstDisplay);
+  rtFirstMonth.addEventListener("change", updateFirstDisplay);
+}
+
+
+
+// ===== 自動車税（種別割） 年税額テーブル =====
+// ※ユーザー提示の表（自家用・乗用）に基づく
+//  - 標準（旧）：初度登録 2019年9月以前
+//  - 標準（新）：初度登録 2019年10月以降
+//  - 重課：初度登録から13年以上経過（本画面では自動適用）
+
+const RT_TAX_STD_OLD = {
+  "<=1.0": 29500,
+  ">1.0<=1.5": 34500,
+  ">1.5<=2.0": 39500,
+  ">2.0<=2.5": 45000,
+  ">2.5<=3.0": 51000,
+  ">3.0<=3.5": 58000,
+  ">3.5<=4.0": 66500
+};
+
+const RT_TAX_STD_NEW = {
+  "<=1.0": 25000,
+  ">1.0<=1.5": 30500,
+  ">1.5<=2.0": 36000,
+  ">2.0<=2.5": 43500,
+  ">2.5<=3.0": 50000,
+  ">3.0<=3.5": 57000,
+  ">3.5<=4.0": 65500
+};
+
+const RT_TAX_SURCHARGE = {
+  "<=1.0": 33900,
+  ">1.0<=1.5": 39600,
+  ">1.5<=2.0": 45400,
+  ">2.0<=2.5": 51700,
+  ">2.5<=3.0": 58600,
+  ">3.0<=3.5": 66700,
+  ">3.5<=4.0": 76400
+};
+
+// 軽自動車（自家用） 年税額
+const RT_KEI_STD_NEW = 10800;
+const RT_KEI_STD_OLD = 7200;
+const RT_KEI_SURCHARGE = 12900;
+
+function isStdOldByFirstReg(y, m){
+  return (y < 2019) || (y === 2019 && m <= 9);
+}
+
+// 抹消月 → 還付対象月数（抹消の翌月〜3月）
+function refundMonthsFromCancelMonth(m){
+  // 還付対象月数：抹消の翌月〜3月
+  // 例）4月抹消 → 5月〜3月（11か月）、3月抹消 → 0か月
+  const fy = [4,5,6,7,8,9,10,11,12,1,2,3];
+  const i = fy.indexOf(m);
+  if(i < 0) return 0;
+  return Math.max(0, fy.length - (i + 1));
+}
+
+// 月割り還付（100円未満切上げ）
+function proratedRefund(annual, months){
+  return Math.ceil((annual * months / 12) / 100) * 100;
+}
+
+function getRtCarType(){
+  const checked = document.querySelector('input[name="rt_car"]:checked');
+  return checked ? checked.value : "普通車";
+}
+
+function updateRtUi(){
+  const carType = getRtCarType();
+  const isKei = carType === "軽自動車";
+  rtEngineBox.style.display = isKei ? "none" : "block";
+}
+rtCarRadios.forEach(r => r.addEventListener("change", () => { updateRtUi(); calcRefund(); }));
+updateRtUi();
+
+function calcRefund(){
+  const carType = getRtCarType();
+  const isKei = carType === "軽自動車";
+  const cancelMonth = parseInt(rtCancelMonth.value, 10);
+
+  const y = rtFirstYear ? parseInt(rtFirstYear.value, 10) : (new Date()).getFullYear();
+  const m = rtFirstMonth ? parseInt(rtFirstMonth.value, 10) : ((new Date()).getMonth() + 1);
+  const isOldStd = isStdOldByFirstReg(y, m);
+
+  // 軽自動車は原則還付なし（参考：年税額のみ表示）
+  if(isKei){
+    const annual = rtIsSurcharge.checked
+      ? RT_KEI_SURCHARGE
+      : (isOldStd ? RT_KEI_STD_OLD : RT_KEI_STD_NEW);
+
+    rtAnnualYen.textContent = yenFmt(annual);
+    rtAnnualMemo.textContent =
+      (rtIsSurcharge.checked ? "軽：重課" : ("軽：標準（" + (isOldStd ? "旧" : "新") + "）")) +
+      " / 初年度登録：" + y + "年" + m + "月";
+
+    rtMonthsEl.textContent = "0";
+    rtRefundYen.textContent = "0";
+      rtBurdenYen.textContent = "0";
+  if(rtBurdenTopYen) rtBurdenTopYen.textContent = "0";
+rtBurdenYen.textContent = yenFmt(annual);
+      if(rtBurdenTopYen) rtBurdenTopYen.textContent = yenFmt(annual);
+rtStatus.textContent = "軽自動車：還付なし（原則）";
+    return;
+  }
+
+  const engineKey = rtEngine.value;
+
+  let annual = 0;
+  let memoRate = "";
+
+  if(rtIsSurcharge.checked){
+    annual = RT_TAX_SURCHARGE[engineKey] ?? 0;
+    memoRate = "普通車：重課";
+  }else{
+    const table = isOldStd ? RT_TAX_STD_OLD : RT_TAX_STD_NEW;
+    annual = table[engineKey] ?? 0;
+    memoRate = "普通車：標準（" + (isOldStd ? "旧" : "新") + "）";
+  }
+
+  const months = refundMonthsFromCancelMonth(cancelMonth);
+  const refund = proratedRefund(annual, months);
+  const burden = Math.max(0, annual - refund);
+
+  rtAnnualYen.textContent = yenFmt(annual);
+  rtAnnualMemo.textContent =
+    memoRate + " / 初年度登録：" + y + "年" + m + "月" + " / 抹消月：" + cancelMonth + "月";
+
+  rtMonthsEl.textContent = String(months);
+  rtRefundYen.textContent = yenFmt(refund);
+  rtBurdenYen.textContent = yenFmt(burden);
+    if(rtBurdenTopYen) rtBurdenTopYen.textContent = yenFmt(burden);
+rtStatus.textContent = "普通車：月割り還付（100円未満切上げ）";
+}
+
+function clearRefundInputs(){
+  // reset to defaults
+  document.querySelector('input[name="rt_car"][value="普通車"]').checked = true;
+  rtEngine.value = "<=1.0";
+  rtIsSurcharge.checked = false;
+  rtCancelMonth.value = "4";
+  if(rtFirstYear && rtFirstMonth){
+    const now = new Date();
+    rtFirstYear.value = String(now.getFullYear());
+    rtFirstMonth.value = String(now.getMonth() + 1);
+        updateFirstDisplay();
+  }
+
+  updateRtUi();
+  rtAnnualYen.textContent = "0";
+  rtAnnualMemo.textContent = "";
+  rtMonthsEl.textContent = "0";
+  rtRefundYen.textContent = "0";
+    rtBurdenYen.textContent = "0";
+  if(rtBurdenTopYen) rtBurdenTopYen.textContent = "0";
+rtStatus.textContent = "—";
+}
+
+rtCalcBtn?.addEventListener("click", calcRefund);
+rtClearBtn?.addEventListener("click", clearRefundInputs);
+
+// 入力を変えたら自動で再計算（押し忘れ防止）
+[rtEngine, rtCancelMonth, rtIsSurcharge, rtFirstYear, rtFirstMonth].forEach(el=>{
+  el?.addEventListener("change", ()=>{ try{ updateFirstDisplay(); }catch(e){} try{ calcRefund(); }catch(e){} });
+});
+
+</script>
+</body>
+</html>
+
+// --- 非課税 強制指定（表示要件） ---
+rows.forEach(r => {
+  if (
+    r.label === "下取車諸手続" ||
+    r.label === "検査・登録・届出費用" ||
+    r.label === "下取車諸手続費用" || // 表記ゆれ対策
+    r.label === "下取車諸手続（下取）"
+  ) {
+    r.taxable = false;
+  }
+});
+
+// --- 課税 強制指定（表示要件） ---
+rows.forEach(r => {
+  if (r.label === "希望番号手数料（希望）") {
+    r.taxable = true;
+  }
+});
+
+
+
