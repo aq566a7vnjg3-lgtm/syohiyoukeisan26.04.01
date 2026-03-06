@@ -215,7 +215,7 @@
           <label class="opt">
             <input type="radio" name="region" value="HC奈良中央" checked>
             <span>HC奈良中央</span>
-            <small>県外判定：奈良県以外 / 普通車+奈良県はOSS自動 / 軽自動車は書類代行固定</small>
+            <small>県外判定：奈良県以外 / 普通車+奈良県はOSS自動選択（手動で書類代行も可） / 軽自動車は書類代行固定</small>
           </label>
           <label class="opt">
             <input type="radio" name="region" value="HC南京都">
@@ -597,13 +597,24 @@ const KENGAI_FEE = 10000;
 const SHAKO_DAIKO_KEI_NEED = 16800;
 
 const SHAKO_SHOSHI = {
-  "奈良県": { "軽四": 0, "小型": 2400 },
-  "京都府": { "軽四": 0, "小型": 2280 },
-  "大阪府": { "軽四": 0, "小型": 2200 },
-  "滋賀県": { "軽四": 0, "小型": 2250 },
-  "和歌山県": { "軽四": 0, "小型": 2100 },
-  "三重県": { "軽四": 0, "小型": 2200 },
-  "兵庫県": { "軽四": 0, "小型": 2200 }
+  "OSS": {
+    "奈良県": { "軽四": 0, "小型": 2300 },
+    "京都府": { "軽四": 0, "小型": 2280 },
+    "大阪府": { "軽四": 0, "小型": 2200 },
+    "滋賀県": { "軽四": 0, "小型": 2250 },
+    "和歌山県": { "軽四": 0, "小型": 2100 },
+    "三重県": { "軽四": 0, "小型": 2200 },
+    "兵庫県": { "軽四": 0, "小型": 2200 }
+  },
+  "書類代行": {
+    "奈良県": { "軽四": 0, "小型": 2400 },
+    "京都府": { "軽四": 0, "小型": 2280 },
+    "大阪府": { "軽四": 0, "小型": 2200 },
+    "滋賀県": { "軽四": 0, "小型": 2250 },
+    "和歌山県": { "軽四": 0, "小型": 2100 },
+    "三重県": { "軽四": 0, "小型": 2200 },
+    "兵庫県": { "軽四": 0, "小型": 2200 }
+  }
 };
 
 const PLATE_PAINT = {
@@ -657,11 +668,11 @@ const DELIVERY_FEE = 2000;
 const DELIVERY_FEE_EV = 1000;
 
 const TRADEIN_DAIKO = 23000;
-const TRADEIN_PROC = 500;
+const TRADEIN_PROC = 700;
 
 const LOAN_FEE = 880;
 const R_ISSUE = 2200;
-const REG_STAMP = { "OSS": 2200, "小型": 2800, "軽四": 1900 };
+const REG_STAMP = { "OSS": 2800, "小型": 3700, "軽四": 2800 };
 
 
 
@@ -837,7 +848,7 @@ function setRuleHint(){
   } else {
     ruleHint.innerHTML =
       `現在：<span class="pillTitle"><b>HC奈良中央</b></span><br>
-       ・普通車＋奈良県は<strong>OSS自動選択</strong><br>
+       ・普通車＋奈良県は<strong>OSS自動選択</strong>（手動で書類代行も可）<br>
        ・軽自動車は<strong>すべて書類代行</strong><br>
        ・県外判定：<strong>${base}以外</strong>は県外費用 10,000円`;
   }
@@ -878,8 +889,8 @@ function updateApplyRules(){
       if(isBase){
         applyOSS.disabled = false;
         applyOSSLabel.classList.remove("disabled");
-        setChecked("apply","OSS");
-        lockMsg = "※HC奈良中央：普通車＋奈良県はOSSを自動選択";
+        if(!getVal("apply")) setChecked("apply","OSS");
+        lockMsg = "※HC奈良中央：普通車＋奈良県はOSSを自動選択（手動で書類代行も選択可）";
       } else {
         applyOSS.disabled = true;
         applyOSSLabel.classList.add("disabled");
@@ -1267,8 +1278,8 @@ function calc(){
     push("下取車査定費用", null, "", true);
     push("自動車税未経過相当額", null, "", true);
     push("自賠責未経過相当額", null, "", true);
-    const sh = SHAKO_SHOSHI?.[pref]?.[typeKey];
-    push("車庫証紙", sh ?? 0, "", false);
+    const sh = SHAKO_SHOSHI?.[apply]?.[pref]?.[typeKey] ?? 0;
+    push("車庫証紙", sh, "", false);
   } else {
     if(apply !== "OSS"){ push("車庫証明代行費用", 0, "", true); }
     push("納車費用（EVは1000円）", (isEV ? DELIVERY_FEE_EV : DELIVERY_FEE), (isEV ? "（EV）" : ""), true);
@@ -1293,13 +1304,13 @@ function calc(){
     const mergedOrig = (baseValue ?? 0) + (regStampToMerge || 0);
 
     // 軽自動車の場合：
-    // - 検査・登録・届出費用は常に 1,900円 表示
+    // - 検査・登録・届出費用は常に 2,800円 表示
     // - 本来の金額（mergedOrig）は「軽標板代」に表示
     if(car === "軽自動車"){
       keiHyobanFee = mergedOrig;
       keiHyobanNote = noteBase || "";
-      const note = "（軽：検査・登録・届出費用は1,900円固定）";
-      push(label, 1900, note, false);
+      const note = "（軽：検査・登録・届出費用は2,800円固定）";
+      push(label, 2800, note, false);
       return;
     }
 
