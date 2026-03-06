@@ -215,7 +215,7 @@
           <label class="opt">
             <input type="radio" name="region" value="HC奈良中央" checked>
             <span>HC奈良中央</span>
-            <small>県外判定：奈良県以外 / 普通車+奈良県はOSS自動選択（手動で書類代行も可） / 軽自動車は書類代行固定</small>
+            <small>県外判定：奈良県以外 / 普通車+奈良県はOSS自動選択（手動で書類代行も可） / 軽自動車もOSS・書類代行を選択可</small>
           </label>
           <label class="opt">
             <input type="radio" name="region" value="HC南京都">
@@ -842,66 +842,73 @@ function setRuleHint(){
   if(region === "HC南京都"){
     ruleHint.innerHTML =
       `現在：<span class="pillTitle"><b>HC南京都</b></span><br>
-       ・普通車は<strong>すべて書類代行</strong><br>
-       ・軽自動車も<strong>すべて書類代行</strong><br>
+       ・前回選択した<strong>OSS / 書類代行</strong>を自動反映<br>
+       ・県外判定：<strong>${base}以外</strong>は県外費用 10,000円`;
+  } else if(region === "HC奈良中央") {
+    ruleHint.innerHTML =
+      `現在：<span class="pillTitle"><b>HC奈良中央</b></span><br>
+       ・前回選択した<strong>OSS / 書類代行</strong>を自動反映<br>
        ・県外判定：<strong>${base}以外</strong>は県外費用 10,000円`;
   } else {
     ruleHint.innerHTML =
-      `現在：<span class="pillTitle"><b>HC奈良中央</b></span><br>
-       ・普通車＋奈良県は<strong>OSS自動選択</strong>（手動で書類代行も可）<br>
-       ・軽自動車は<strong>すべて書類代行</strong><br>
+      `現在：<span class="pillTitle"><b>${escapeHtml(region)}</b></span><br>
+       ・申請方法は未選択から開始<br>
        ・県外判定：<strong>${base}以外</strong>は県外費用 10,000円`;
   }
 }
 
+const APPLY_MEMORY_KEY = "applyMemoryByRegion_v1";
+function loadApplyMemory(){
+  try {
+    const raw = localStorage.getItem(APPLY_MEMORY_KEY);
+    const parsed = raw ? JSON.parse(raw) : {};
+    return (parsed && typeof parsed === "object") ? parsed : {};
+  } catch(e){
+    return {};
+  }
+}
+function saveApplyMemory(region, apply){
+  if(!["HC奈良中央","HC南京都"].includes(region)) return;
+  if(!["OSS","書類代行"].includes(apply)) return;
+  const mem = loadApplyMemory();
+  mem[region] = apply;
+  try { localStorage.setItem(APPLY_MEMORY_KEY, JSON.stringify(mem)); } catch(e){}
+}
+function getRememberedApply(region){
+  if(!["HC奈良中央","HC南京都"].includes(region)) return "";
+  const mem = loadApplyMemory();
+  return ["OSS","書類代行"].includes(mem[region]) ? mem[region] : "";
+}
+function getDefaultApplyByRegion(region){
+  if(region === "HC奈良中央") return "書類代行";
+  if(region === "HC南京都") return "書類代行";
+  return "";
+}
+
 /** ===== 申請方法ルール ===== **/
 function updateApplyRules(){
-  const car = getVal("car");
-  const pref = getVal("pref");
   const region = getVal("region") || "HC奈良中央";
-  const basePref = getBasePrefByRegion();
+  const remembered = getRememberedApply(region) || getDefaultApplyByRegion(region);
 
   applyBackgroundByRegion();
   setRuleHint();
 
-  if(!car || !pref){
-    applyOSS.disabled = false;
-    applyOSSLabel.classList.remove("disabled");
-    applyLockNote.style.display = "none";
-    return;
-  }
+  applyOSS.disabled = false;
+  applyOSSLabel.classList.remove("disabled");
 
-  const isBase = (pref === basePref);
-  let lockMsg = "";
-
-  if(region === "HC南京都"){
-    applyOSS.disabled = true;
-    applyOSSLabel.classList.add("disabled");
-    setChecked("apply","書類代行");
-    lockMsg = "※HC南京都：普通車・軽自動車とも書類代行固定";
-  } else {
-    if(car === "軽自動車"){
-      applyOSS.disabled = true;
-      applyOSSLabel.classList.add("disabled");
-      setChecked("apply","書類代行");
-      lockMsg = "※HC奈良中央：軽自動車は書類代行固定";
-    } else {
-      if(isBase){
-        applyOSS.disabled = false;
-        applyOSSLabel.classList.remove("disabled");
-        if(!getVal("apply")) setChecked("apply","OSS");
-        lockMsg = "※HC奈良中央：普通車＋奈良県はOSSを自動選択（手動で書類代行も選択可）";
-      } else {
-        applyOSS.disabled = true;
-        applyOSSLabel.classList.add("disabled");
-        setChecked("apply","書類代行");
-        lockMsg = "※HC奈良中央：普通車で奈良県以外は書類代行固定（県外費用10,000円加算）";
-      }
+  if(["HC奈良中央","HC南京都"].includes(region)){
+    if(getVal("apply") !== remembered && remembered){
+      setChecked("apply", remembered);
+    } else if(!getVal("apply") && remembered){
+      setChecked("apply", remembered);
     }
+    applyLockNote.style.display = "block";
+    applyLockNote.textContent = `※${region}：前回選択した申請方法を自動反映します`;
+  } else {
+    clearGroup("apply");
+    applyLockNote.style.display = "block";
+    applyLockNote.textContent = `※${region}：申請方法は自動記憶せず未選択に戻します`;
   }
-
-  applyLockNote.style.display = lockMsg ? "block" : "none";
-  applyLockNote.textContent = lockMsg;
 }
 
 function updateConditionalUI(){
@@ -1596,6 +1603,18 @@ if(mamoruClearBtn){
     calc();
   });
 }
+
+document.querySelectorAll('input[name="apply"]').forEach(el=>{
+  el.addEventListener("change", ()=>{
+    const region = getVal("region") || "";
+    const apply = getVal("apply") || "";
+    saveApplyMemory(region, apply);
+    calc();
+  });
+});
+document.querySelectorAll('input[name="region"]').forEach(el=>{
+  el.addEventListener("change", ()=>{ updateApplyRules(); calc(); });
+});
 
 form.addEventListener("change", calc);
 
