@@ -190,6 +190,42 @@
     font-weight:800;
     letter-spacing:.04em;
   }
+
+  /* ===== 印刷スタイル ===== */
+  @media print {
+    body { background: #fff !important; }
+    .wrap { max-width: 100%; margin: 0; padding: 0; }
+
+    /* 印刷時に非表示 */
+    .top, #feeForm .grid, .hint, #pageFee > form > .hint { display: none !important; }
+
+    /* 結果エリアのみ表示 */
+    .result {
+      border: none !important;
+      box-shadow: none !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .resultTop { margin-bottom: 6px !important; }
+
+    /* モバイルカード非表示・テーブル表示を強制 */
+    .rows { display: none !important; }
+    .tblwrap {
+      display: block !important;
+      border: 1px solid #ccc !important;
+      border-radius: 0 !important;
+    }
+    table { font-size: 11px !important; min-width: unset !important; width: 100% !important; }
+    thead th { background: #eef2ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr.sec td { background: #f3f6ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+    tr.sub td { background: #e8f1ff !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+
+    /* 印刷ヘッダー表示 */
+    #printHeader { display: block !important; }
+
+    /* ページ余白 */
+    @page { margin: 15mm 12mm; }
+  }
 </style>
 </head>
 <body>
@@ -202,6 +238,7 @@
       <button class="btn" id="resetBtn" type="button">選択を解除</button>
       <button class="btn" id="recalcBtn" type="button">再計算</button>
       <button class="btn btnBig btnAccent" id="refundBtn" type="button">自動車税 還付計算へ</button>
+      <button class="btn btnBig" id="printBtn" type="button" style="background:#fff;border-color:#1f4fbf;color:#1f4fbf;">🖨️ 計算結果を印刷</button>
     </div>
     <div class="hint" id="ruleHint"></div>
   </div>
@@ -432,6 +469,11 @@
     </div>
 
     <div class="result">
+      <!-- 印刷時のみ表示するヘッダー -->
+      <div id="printHeader" style="display:none; margin-bottom:10px; border-bottom:2px solid #1f4fbf; padding-bottom:6px;">
+        <div style="font-size:16px; font-weight:900; color:#1f4fbf;">諸費用 計算結果</div>
+        <div id="printMeta" style="font-size:12px; color:#444; margin-top:2px;"></div>
+      </div>
       <div class="resultTop">
         <div class="total">合計：<span id="totalYen">0</span> 円</div>
         <div class="status" id="statusText">必須項目を選択してください</div>
@@ -461,7 +503,8 @@
       </div>
 
       <div class="hint" style="margin-top:10px;">
-        ※非課税：車庫証紙 / 下取車諸手続（登録証紙・下取証紙は表示しません）<br>
+        ※非課税：車庫証紙 / 下取車諸手続 / 検査・登録・届出費用（登録証紙代含む）（登録証紙・下取証紙は表示しません）<br>
+        ※軽自動車の登録証紙代：書類代行 2,400円 / OSS 2,100円（検査・登録・届出費用に含む）<br>
         ※課税分の「R発行費用/振込手数料」に、必要時のみ残債手数料(880円)を合算して1行表示します
       </div>
     </div>
@@ -672,7 +715,7 @@ const TRADEIN_PROC = 700;
 
 const LOAN_FEE = 880;
 const R_ISSUE = 2200;
-const REG_STAMP = { "OSS": 2800, "小型": 3700, "軽四": 2800 };
+const REG_STAMP = { "OSS": 2800, "小型": 3700, "軽四_OSS": 2100, "軽四_書類代行": 2400 };
 
 
 
@@ -1301,8 +1344,12 @@ function calc(){
     push("下取車査定費用", null, "", true);
     push("自動車税未経過相当額", null, "", true);
     push("自賠責未経過相当額", null, "", true);
-    const sh = SHAKO_SHOSHI?.[apply]?.[pref]?.[typeKey] ?? 0;
-    push("車庫証紙", sh, "", false);
+    // 小型・書類代行の車庫証明証紙は検査・登録・届出費用に合算済みのため0表示
+    const sh = (car === "普通車" && apply === "書類代行")
+      ? 0
+      : (SHAKO_SHOSHI?.[apply]?.[pref]?.[typeKey] ?? 0);
+    const shNote = (car === "普通車" && apply === "書類代行") ? "（検査・登録・届出費用に合算）" : "";
+    push("車庫証紙", sh, shNote, false);
   } else {
     if(apply !== "OSS"){ push("車庫証明代行費用", 0, "", true); }
     push("納車費用（EVは1000円）", (isEV ? DELIVERY_FEE_EV : DELIVERY_FEE), (isEV ? "（EV）" : ""), true);
@@ -1310,11 +1357,19 @@ function calc(){
   }
 
   // 参考項目（常に表示・金額は「-」）
-// 普通車は登録証紙を検査・登録・届出費用に合算（OSS/書類代行で差）
+// 普通車は登録証紙＋書類代行時は車庫証明証紙を検査・登録・届出費用に合算
+  const shakoShoshiForMerge = (car === "普通車" && apply === "書類代行" && pref)
+    ? (SHAKO_SHOSHI?.["書類代行"]?.[pref]?.["小型"] ?? 0)
+    : 0;
   const regStampToMerge =
     (car === "普通車" && apply)
-      ? (apply === "OSS" ? REG_STAMP["OSS"] : REG_STAMP["小型"])
+      ? (apply === "OSS" ? REG_STAMP["OSS"] : REG_STAMP["小型"] + shakoShoshiForMerge)
       : 0;
+
+  // 軽自動車の登録証紙代（申請方法により変わる：書類代行=2,400円 / OSS=2,100円）
+  const keiRegStamp = (car === "軽自動車" && apply)
+    ? (apply === "OSS" ? REG_STAMP["軽四_OSS"] : REG_STAMP["軽四_書類代行"])
+    : 0;
 
   let patternDonation = 0;
   const plateTable = (plateStyle === "字光式") ? PLATE_JIKOU : PLATE_PAINT;
@@ -1327,18 +1382,22 @@ function calc(){
     const mergedOrig = (baseValue ?? 0) + (regStampToMerge || 0);
 
     // 軽自動車の場合：
-    // - 検査・登録・届出費用は常に 2,800円 表示
-    // - 本来の金額（mergedOrig）は「軽標板代」に表示
+    // - 検査・登録・届出費用は登録証紙代（書類代行2,400円/OSS2,100円）を表示
+    // - 本来のナンバー代等（mergedOrig）は「軽標板代」に表示
     if(car === "軽自動車"){
       keiHyobanFee = mergedOrig;
       keiHyobanNote = noteBase || "";
-      const note = "（軽：検査・登録・届出費用は2,800円固定）";
-      push(label, 2800, note, false);
+      const keiStampNote = apply === "OSS"
+        ? "（軽：登録証紙代 2,100円 / OSS）"
+        : "（軽：登録証紙代 2,400円 / 書類代行）";
+      push(label, keiRegStamp, keiStampNote, false);
       return;
     }
 
     const note = (car === "普通車" && apply && regStampToMerge)
-      ? `（登録証紙 ${yenFmt(regStampToMerge)}円を合算）`
+      ? (apply === "書類代行"
+          ? `（登録証紙 ${yenFmt(REG_STAMP["小型"])}円＋車庫証紙 ${yenFmt(shakoShoshiForMerge)}円を合算）`
+          : `（登録証紙 ${yenFmt(regStampToMerge)}円を合算）`)
       : noteBase;
     push(label, mergedOrig, note, false);
   };
@@ -1628,6 +1687,22 @@ if(mamoruClearBtn){
 }
 
 form.addEventListener("change", calc);
+
+/** ========= 印刷 ========= **/
+document.getElementById("printBtn")?.addEventListener("click", ()=>{
+  // 印刷ヘッダーに選択内容を反映
+  const region  = getVal("region") || "";
+  const car     = getVal("car") || "";
+  const pref    = getVal("pref") || "";
+  const apply   = getVal("apply") || "";
+  const plate   = getVal("plate") || "";
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+  const meta = [dateStr, region, car, pref, apply, plate].filter(Boolean).join("　|　");
+  const el = document.getElementById("printMeta");
+  if(el) el.textContent = meta;
+  window.print();
+});
 
 if(zipEl){
   zipEl.addEventListener("input", ()=> applyShakoFromZip({recalc:true}));
@@ -1924,25 +1999,3 @@ rtClearBtn?.addEventListener("click", clearRefundInputs);
 </script>
 </body>
 </html>
-
-// --- 非課税 強制指定（表示要件） ---
-rows.forEach(r => {
-  if (
-    r.label === "下取車諸手続" ||
-    r.label === "検査・登録・届出費用" ||
-    r.label === "下取車諸手続費用" || // 表記ゆれ対策
-    r.label === "下取車諸手続（下取）"
-  ) {
-    r.taxable = false;
-  }
-});
-
-// --- 課税 強制指定（表示要件） ---
-rows.forEach(r => {
-  if (r.label === "希望番号手数料（希望）") {
-    r.taxable = true;
-  }
-});
-
-
-
