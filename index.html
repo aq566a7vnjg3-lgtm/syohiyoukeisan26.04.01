@@ -1344,12 +1344,8 @@ function calc(){
     push("下取車査定費用", null, "", true);
     push("自動車税未経過相当額", null, "", true);
     push("自賠責未経過相当額", null, "", true);
-    // 小型・書類代行の車庫証明証紙は検査・登録・届出費用に合算済みのため0表示
-    const sh = (car === "普通車" && apply === "書類代行")
-      ? 0
-      : (SHAKO_SHOSHI?.[apply]?.[pref]?.[typeKey] ?? 0);
-    const shNote = (car === "普通車" && apply === "書類代行") ? "（検査・登録・届出費用に合算）" : "";
-    push("車庫証紙", sh, shNote, false);
+    const sh = SHAKO_SHOSHI?.[apply]?.[pref]?.[typeKey] ?? 0;
+    push("車庫証紙", sh, "", false);
   } else {
     if(apply !== "OSS"){ push("車庫証明代行費用", 0, "", true); }
     push("納車費用（EVは1000円）", (isEV ? DELIVERY_FEE_EV : DELIVERY_FEE), (isEV ? "（EV）" : ""), true);
@@ -1357,13 +1353,11 @@ function calc(){
   }
 
   // 参考項目（常に表示・金額は「-」）
-// 普通車は登録証紙＋書類代行時は車庫証明証紙を検査・登録・届出費用に合算
-  const shakoShoshiForMerge = (car === "普通車" && apply === "書類代行" && pref)
-    ? (SHAKO_SHOSHI?.["書類代行"]?.[pref]?.["小型"] ?? 0)
-    : 0;
+// 普通車は登録証紙のみを検査・登録・届出費用に合算（車庫証紙は車庫証紙欄に別表示）
+  const shakoShoshiForMerge = 0; // 車庫証紙は合算しない
   const regStampToMerge =
     (car === "普通車" && apply)
-      ? (apply === "OSS" ? REG_STAMP["OSS"] : REG_STAMP["小型"] + shakoShoshiForMerge)
+      ? (apply === "OSS" ? REG_STAMP["OSS"] : REG_STAMP["小型"])
       : 0;
 
   // 軽自動車の登録証紙代（申請方法により変わる：書類代行=2,400円 / OSS=2,100円）
@@ -1395,9 +1389,7 @@ function calc(){
     }
 
     const note = (car === "普通車" && apply && regStampToMerge)
-      ? (apply === "書類代行"
-          ? `（登録証紙 ${yenFmt(REG_STAMP["小型"])}円＋車庫証紙 ${yenFmt(shakoShoshiForMerge)}円を合算）`
-          : `（登録証紙 ${yenFmt(regStampToMerge)}円を合算）`)
+      ? `（標板代 ${yenFmt(baseValue ?? 0)}円＋登録証紙 ${yenFmt(regStampToMerge)}円）`
       : noteBase;
     push(label, mergedOrig, note, false);
   };
