@@ -635,8 +635,8 @@
 <script>
 /** ========= 料金表 ========= **/
 function typeKeyFromCar(car){ return (car === "軽自動車") ? "軽四" : "小型"; }
-const APPLY_FEE = { "OSS": 41000, "書類代行": 24500 };
-const KENGAI_FEE = 10000;
+const APPLY_FEE = { "OSS": 44000, "書類代行": 31900 };
+const KENGAI_FEE = 0;
 const SHAKO_DAIKO_KEI_NEED = 16800;
 
 const SHAKO_SHOSHI = {
@@ -703,14 +703,14 @@ const PLATE_JIKOU = {
 };
 
 const HOPE_FEE = { "小型": 11000, "軽四": 11000 };
-const PATTERN_FEE = { "小型": 20000, "軽四": 17000 };
+const PATTERN_FEE = { "小型": 19800, "軽四": 16500 };
 const PATTERN_DONATION = 1000;
 const JIKOU_TOOL = 27500;
 
 const DELIVERY_FEE = 2000;
 const DELIVERY_FEE_EV = 1000;
 
-const TRADEIN_DAIKO = 23000;
+const TRADEIN_DAIKO = 23100;
 const TRADEIN_PROC = 700;
 
 const LOAN_FEE = 880;
@@ -1333,9 +1333,9 @@ function calc(){
     // OSSの場合、車庫証明代行費用はOSS申請代行費用に含まれるため表示しない
     if(apply !== "OSS"){
       if(car === "軽自動車"){
-        push("車庫証明代行費用", 6200, "（軽自動車）", true);
+        push("車庫証明代行費用", 17600, "（軽自動車）", true);
       } else {
-        push("車庫証明代行費用", 16800, "", true);
+        push("車庫証明代行費用", 17600, "", true);
       }
     }
     push("納車費用（EVは1000円）", (isEV ? DELIVERY_FEE_EV : DELIVERY_FEE), (isEV ? "（EV）" : ""), true);
