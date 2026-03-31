@@ -910,13 +910,13 @@ function setRuleHint(){
       `現在：<span class="pillTitle"><b>HC南京都</b></span><br>
        ・普通車は<strong>すべて書類代行</strong><br>
        ・軽自動車も<strong>すべて書類代行</strong><br>
-       ・県外判定：<strong>${base}以外</strong>は県外費用 10,000円`;
+       ・県外判定：<strong>${base}以外</strong>は書類代行固定`;
   } else {
     ruleHint.innerHTML =
       `現在：<span class="pillTitle"><b>HC奈良中央</b></span><br>
        ・普通車＋奈良県は<strong>OSS自動選択</strong>（手動で書類代行も可）<br>
        ・軽自動車は<strong>OSS・書類代行を選択可</strong>（初期値は書類代行）<br>
-       ・県外判定：<strong>${base}以外</strong>は県外費用 10,000円`;
+       ・県外判定：<strong>${base}以外</strong>は書類代行固定`;
   }
 }
 
@@ -961,7 +961,7 @@ function updateApplyRules(){
         applyOSS.disabled = true;
         applyOSSLabel.classList.add("disabled");
         setChecked("apply","書類代行");
-        lockMsg = "※HC奈良中央：普通車で奈良県以外は書類代行固定（県外費用10,000円加算）";
+        lockMsg = "※HC奈良中央：普通車で奈良県以外は書類代行固定";
       }
     }
   }
@@ -1320,9 +1320,13 @@ function calc(){
   // 登録代行費用
   if(apply){
     let base = APPLY_FEE[apply] ?? 0;
+    // 普通車 × OSS × 車庫証明不要 → 33,000円
+    if(apply === "OSS" && car === "普通車" && shakoNeed === "不要"){
+      base = 33000;
+    }
     if(isOut){
       base += KENGAI_FEE;
-      push("登録代行費用", base, `（県外費用 10,000円含む：基準=${basePref}）`, true);
+      push("登録代行費用", base, `（基準=${basePref}）`, true);
     } else {
       push((apply === "OSS" ? "OSS申請代行費用" : "登録代行費用"), base, `（基準=${basePref}）`, true);
     }
