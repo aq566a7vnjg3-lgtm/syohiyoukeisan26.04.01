@@ -531,6 +531,7 @@
         <div class="options cols2">
           <label class="opt"><input type="radio" name="rt_car" value="普通車" checked><span>普通車</span></label>
           <label class="opt"><input type="radio" name="rt_car" value="軽自動車"><span>軽自動車</span></label>
+          <label class="opt"><input type="radio" name="rt_car" value="軽貨物"><span>軽貨物</span></label>
         </div>
         <div style="height:10px;"></div>
 
@@ -1870,8 +1871,20 @@ const RT_KEI_STD_NEW = 10800;
 const RT_KEI_STD_OLD = 7200;
 const RT_KEI_SURCHARGE = 12900;
 
+// 軽貨物（自家用） 年税額
+// 旧税額：初度検査 2015年3月31日以前
+// 新税額：初度検査 2015年4月1日以降
+const RT_CARGO_STD_OLD = 4000;
+const RT_CARGO_STD_NEW = 5000;
+const RT_CARGO_SURCHARGE = 6000; // 初度検査から13年経過後（重課）
+
 function isStdOldByFirstReg(y, m){
   return (y < 2019) || (y === 2019 && m <= 9);
+}
+
+// 軽貨物：2015年3月以前の初度検査 → 旧税額（4,000円）
+function isCargoOldByFirstReg(y, m){
+  return (y < 2015) || (y === 2015 && m <= 3);
 }
 
 // 抹消月 → 還付対象月数（抹消の翌月〜3月）
@@ -1896,8 +1909,8 @@ function getRtCarType(){
 
 function updateRtUi(){
   const carType = getRtCarType();
-  const isKei = carType === "軽自動車";
-  rtEngineBox.style.display = isKei ? "none" : "block";
+  const isKeiType = carType === "軽自動車" || carType === "軽貨物";
+  rtEngineBox.style.display = isKeiType ? "none" : "block";
 }
 rtCarRadios.forEach(r => r.addEventListener("change", () => { updateRtUi(); calcRefund(); }));
 updateRtUi();
@@ -1905,22 +1918,33 @@ updateRtUi();
 function calcRefund(){
   const carType = getRtCarType();
   const isKei = carType === "軽自動車";
+  const isCargo = carType === "軽貨物";
   const cancelMonth = parseInt(rtCancelMonth.value, 10);
 
   const y = rtFirstYear ? parseInt(rtFirstYear.value, 10) : (new Date()).getFullYear();
   const m = rtFirstMonth ? parseInt(rtFirstMonth.value, 10) : ((new Date()).getMonth() + 1);
   const isOldStd = isStdOldByFirstReg(y, m);
 
-  // 軽自動車は原則還付なし（参考：年税額のみ表示）
-  if(isKei){
-    const annual = rtIsSurcharge.checked
-      ? RT_KEI_SURCHARGE
-      : (isOldStd ? RT_KEI_STD_OLD : RT_KEI_STD_NEW);
+  // 軽自動車・軽貨物は原則還付なし（参考：年税額のみ表示）
+  if(isKei || isCargo){
+    let annual, memoRate;
+    if(isCargo){
+      const isCargoOld = isCargoOldByFirstReg(y, m);
+      annual = rtIsSurcharge.checked
+        ? RT_CARGO_SURCHARGE
+        : (isCargoOld ? RT_CARGO_STD_OLD : RT_CARGO_STD_NEW);
+      memoRate = rtIsSurcharge.checked
+        ? "軽貨物：重課"
+        : ("軽貨物：標準（" + (isCargoOld ? "旧" : "新") + "）");
+    } else {
+      annual = rtIsSurcharge.checked
+        ? RT_KEI_SURCHARGE
+        : (isOldStd ? RT_KEI_STD_OLD : RT_KEI_STD_NEW);
+      memoRate = rtIsSurcharge.checked ? "軽：重課" : ("軽：標準（" + (isOldStd ? "旧" : "新") + "）");
+    }
 
     rtAnnualYen.textContent = yenFmt(annual);
-    rtAnnualMemo.textContent =
-      (rtIsSurcharge.checked ? "軽：重課" : ("軽：標準（" + (isOldStd ? "旧" : "新") + "）")) +
-      " / 初年度登録：" + y + "年" + m + "月";
+    rtAnnualMemo.textContent = memoRate + " / 初年度登録：" + y + "年" + m + "月";
 
     rtMonthsEl.textContent = "0";
     rtRefundYen.textContent = "0";
@@ -1928,7 +1952,7 @@ function calcRefund(){
   if(rtBurdenTopYen) rtBurdenTopYen.textContent = "0";
 rtBurdenYen.textContent = yenFmt(annual);
       if(rtBurdenTopYen) rtBurdenTopYen.textContent = yenFmt(annual);
-rtStatus.textContent = "軽自動車：還付なし（原則）";
+rtStatus.textContent = (isCargo ? "軽貨物" : "軽自動車") + "：還付なし（原則）";
     return;
   }
 
