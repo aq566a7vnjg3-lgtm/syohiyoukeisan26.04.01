@@ -451,15 +451,15 @@
         <div id="loanBox">
           <div class="noteSmall" style="margin:0 0 8px;">残債（所有権が信販会社のとき）</div>
           <div class="options cols2">
-            <label class="opt"><input type="radio" name="loan" value="あり"><span>残債あり</span></label>
             <label class="opt"><input type="radio" name="loan" value="なし"><span>残債なし</span></label>
+            <label class="opt"><input type="radio" name="loan" value="あり"><span>残債あり</span></label>
           </div>
         </div>
       </section>
       <section class="card span2">
         <h3><span class="chip">⑩</span> 点検パック</h3><div class="options cols2" style="align-items:flex-start;">
           <div>
-            <div class="noteSmall" style="margin:0 0 6px;">車両区分（自動/手動）</div>
+            <div class="noteSmall" id="vehicleClassLabel" style="margin:0 0 6px;">車両区分（自動/手動）</div>
             <select id="inspectVehicleClass" class="zipInput" style="max-width:360px;">
               <option value="auto">自動（車種から推定）</option>
               <option value="kei">軽自動車</option>
@@ -483,7 +483,7 @@
         </div>
         <div style="height:10px;"></div>
         <div>
-          <div class="noteSmall" style="margin:0 0 6px;">バックコース</div>
+          <div class="noteSmall" style="margin:0 0 6px;">パックコース</div>
           <select id="inspectCourse" class="zipInput" style="max-width:220px;">
             <option value="">（未選択）</option>
           </select>
@@ -808,6 +808,29 @@ const INSPECT_PACK = {
   }
 };
 
+/** ========= 点検パック EV専用価格表（バック価格） ========= **/
+// noneev=N-ONE e:（軽）, nvanev=N-VAN e:（軽貨物）, superone=SUPER ONE（小型）, insight=インサイト（普通）
+const INSPECT_PACK_EV = {
+  "フルカバ": {
+    "5S":  { noneev:65560,   nvanev:null,    superone:72830,  insight:80730  },
+    "5T":  { noneev:33960,   nvanev:null,    superone:38640,  insight:43260  },
+    "LS":  { noneev:119940,  nvanev:108760,  superone:132880, insight:147140 },
+    "LT":  { noneev:88340,   nvanev:77160,   superone:98690,  insight:109670 },
+    "4T":  { noneev:33960,   nvanev:null,    superone:38640,  insight:43260  },
+    "3T":  { noneev:22780,   nvanev:22780,   superone:25860,  insight:28940  },
+    "2T":  { noneev:16980,   nvanev:16980,   superone:19320,  insight:21630  }
+  },
+  "チャオ": {
+    "SS":  { noneev:54380,   nvanev:54380,   superone:60050,  insight:66410  },
+    "4S":  { noneev:65560,   nvanev:null,    superone:72830,  insight:80730  },
+    "3S":  { noneev:54380,   nvanev:54380,   superone:60050,  insight:66410  },
+    "2S":  { noneev:48580,   nvanev:48580,   superone:53510,  insight:59100  },
+    "1S":  { noneev:37400,   nvanev:37400,   superone:40730,  insight:44780  },
+    "KS":  { noneev:108760,  nvanev:108760,  superone:120100, insight:132820 },
+    "KT":  { noneev:77160,   nvanev:77160,   superone:85910,  insight:95350  }
+  }
+};
+
 const MAMORU_FEE = {
   none: 0,
   m660: 10000,
@@ -1128,10 +1151,11 @@ function getAutoVehicleClass(){
 function autoMamoruFromVehicleClass(vClass){
   // 車両区分に応じてマモルのデフォルトを自動選択（任意：必要なら「選択解除」でOFF可）
   switch(vClass){
-    case "kei": return "m660";
-    case "cargo": return "mcargo";
-    case "small": return "m661_1500";
-    case "mid": return "m1501_2000";
+    case "noneev": case "nvanev": case "superone": case "insight": return "m660"; // EV一律10,000円
+    case "kei":    return "m660";
+    case "cargo":  return "mcargo";
+    case "small":  return "m661_1500";
+    case "mid":    return "m1501_2000";
     case "normal": return "m2001";
     default: return "none";
   }
@@ -1156,22 +1180,80 @@ function setSelectOptions(selectEl, options, keepValue=true){
   }
 }
 
+/** EV専用コース定義（車種ごとに利用可能コースが異なる） */
+const EV_COURSES = {
+  "フルカバ": {
+    noneev:   ["5S","5T","LS","LT","4T","3T","2T"],
+    nvanev:   ["LS","LT","3T","2T"],
+    superone: ["5S","5T","LS","LT","4T","3T","2T"],
+    insight:  ["5S","5T","LS","LT","4T","3T","2T"]
+  },
+  "チャオ": {
+    noneev:   ["SS","4S","3S","2S","1S","KS","KT"],
+    nvanev:   ["SS","3S","2S","1S","KS","KT"],
+    superone: ["SS","4S","3S","2S","1S","KS","KT"],
+    insight:  ["SS","4S","3S","2S","1S","KS","KT"]
+  }
+};
+
+/** EVチェック切替時に⑩点検パックの車種ドロップダウンを切替 */
+function syncInspectEVMode(){
+  const isEV = !!document.getElementById("isEV")?.checked;
+  const label = document.getElementById("vehicleClassLabel");
+  if(!inspectVehicleClassEl || !label) return;
+
+  if(isEV){
+    label.textContent = "車種";
+    setSelectOptions(inspectVehicleClassEl, [
+      {value:"noneev",   label:"N-ONE e:（軽自動車）"},
+      {value:"nvanev",   label:"N-VAN e:（軽貨物）"},
+      {value:"superone", label:"SUPER ONE（小型車）"},
+      {value:"insight",  label:"インサイト（普通車）"}
+    ], false);
+    syncMamoruByVehicleClass();
+  } else {
+    label.textContent = "車両区分（自動/手動）";
+    setSelectOptions(inspectVehicleClassEl, [
+      {value:"auto",   label:"自動（車種から推定）"},
+      {value:"kei",    label:"軽自動車"},
+      {value:"cargo",  label:"軽貨物"},
+      {value:"small",  label:"小型車（5ナンバー 1500cc以下）"},
+      {value:"mid",    label:"中型車（5ナンバー 1501cc以上）"},
+      {value:"normal", label:"普通車（3ナンバー）"}
+    ], false);
+    inspectVehicleClassEl.value = "auto";
+    syncMamoruByVehicleClass();
+  }
+  updateInspectUI();
+}
+
 function updateInspectUI(){
+  const isEV = !!document.getElementById("isEV")?.checked;
   const packType = getVal("inspectPackType") || "なし";
   const vClassRaw = inspectVehicleClassEl?.value || "auto";
-  const vClass = (vClassRaw === "auto") ? getAutoVehicleClass() : vClassRaw;
+  const vClass = isEV ? vClassRaw : ((vClassRaw === "auto") ? getAutoVehicleClass() : vClassRaw);
 
   const disabled = (packType === "なし");
   if(inspectCourseEl) inspectCourseEl.disabled = disabled;
-  if(inspectVehicleClassEl) inspectVehicleClassEl.disabled = false; // 自動/手動を選べるように常に有効
-  if(mamoruClassEl) mamoruClassEl.disabled = false; // 任意
+  if(inspectVehicleClassEl) inspectVehicleClassEl.disabled = false;
+  if(mamoruClassEl) mamoruClassEl.disabled = false;
 
   if(disabled){
     setSelectOptions(inspectCourseEl, [{value:"", label:"（未選択）"}], false);
     return;
   }
 
-  // コース候補を更新
+  // EV専用コース
+  if(isEV){
+    const courses = EV_COURSES[packType]?.[vClass] || [];
+    setSelectOptions(inspectCourseEl, [
+      {value:"", label:"（未選択）"},
+      ...courses.map(c=>({value:c, label:c}))
+    ]);
+    return;
+  }
+
+  // 通常コース候補を更新
   if(packType === "フルカバ"){
     if(vClass === "cargo"){
       setSelectOptions(inspectCourseEl, [
@@ -1452,23 +1534,33 @@ function calc(){
   let inspectFee = 0;
   let inspectMemo = "";
   if(inspectPackType !== "なし" && inspectCourse){
-    if(inspectPackType === "フルカバ"){
-      if(inspectVehicle === "cargo"){
-        inspectFee = INSPECT_PACK["フルカバ"].cargo?.[inspectCourse] ?? 0;
-      }else{
-        inspectFee = INSPECT_PACK["フルカバ"].normal?.[inspectCourse]?.[inspectVehicle] ?? 0;
+    const vLabelMap = {
+      kei:"軽自動車", cargo:"軽貨物", small:"小型(1500cc以下)", mid:"中型(1501cc以上)", normal:"普通車(3ナンバー)",
+      noneev:"N-ONE e:", nvanev:"N-VAN e:", superone:"SUPER ONE", insight:"インサイト"
+    };
+    if(isEV){
+      const evPrice = INSPECT_PACK_EV[inspectPackType]?.[inspectCourse]?.[inspectVehicle];
+      inspectFee = evPrice ?? 0;
+      inspectMemo = `${inspectPackType} ${inspectCourse} / ${vLabelMap[inspectVehicle] || inspectVehicle}（EV）`;
+      if(evPrice == null) inspectMemo += "（価格表なし）";
+    } else {
+      if(inspectPackType === "フルカバ"){
+        if(inspectVehicle === "cargo"){
+          inspectFee = INSPECT_PACK["フルカバ"].cargo?.[inspectCourse] ?? 0;
+        }else{
+          inspectFee = INSPECT_PACK["フルカバ"].normal?.[inspectCourse]?.[inspectVehicle] ?? 0;
+        }
+      } else if(inspectPackType === "チャオ"){
+        if(inspectVehicle === "cargo"){
+          inspectFee = 0; // 価格表なし
+        } else {
+          inspectFee = INSPECT_PACK["チャオ"]?.[inspectCourse]?.[inspectVehicle] ?? 0;
+        }
       }
-    } else if(inspectPackType === "チャオ"){
-      if(inspectVehicle === "cargo"){
-        inspectFee = 0; // 価格表なし
-      } else {
-        inspectFee = INSPECT_PACK["チャオ"]?.[inspectCourse]?.[inspectVehicle] ?? 0;
-      }
+      inspectMemo = `${inspectPackType} ${inspectCourse} / ${vLabelMap[inspectVehicle] || inspectVehicle}`;
+      if(inspectVehicleRaw === "auto") inspectMemo += "（車種から自動）";
+      if(inspectPackType === "チャオ" && inspectVehicle === "cargo") inspectMemo += "（軽貨物は価格表なし）";
     }
-    const vLabelMap = { kei:"軽自動車", cargo:"軽貨物", small:"小型(1500cc以下)", mid:"中型(1501cc以上)", normal:"普通車(3ナンバー)" };
-    inspectMemo = `${inspectPackType} ${inspectCourse} / ${vLabelMap[inspectVehicle] || inspectVehicle}`;
-    if(inspectVehicleRaw === "auto") inspectMemo += "（車種から自動）";
-    if(inspectPackType === "チャオ" && inspectVehicle === "cargo") inspectMemo += "（軽貨物は価格表なし）";
   }
 
   const mamoruFee = MAMORU_FEE[mamoruClass] ?? 0;
@@ -1841,6 +1933,8 @@ patternDonation = (patternColor === "カラー") ? PATTERN_DONATION : 0;
 // ①車種（普通車/軽自動車）に連動して、⑩点検パックの車両区分を自動設定
 function syncInspectVehicleByCar(){
   if(!inspectVehicleClassEl) return;
+  // EVモード中は車種ラジオボタンでの車両区分連動をスキップ
+  if(document.getElementById("isEV")?.checked) return;
   const car = getVal("car") || "";
   if(car === "軽自動車"){
     // ユーザーが手動で変えていても、軽自動車選択時は「軽自動車」に合わせる
@@ -1862,6 +1956,9 @@ function syncInspectVehicleByCar(){
 document.querySelectorAll('input[name="car"]').forEach(el=>{
   el.addEventListener("change", ()=>{ syncInspectVehicleByCar(); calc(); });
 });
+
+// EVチェック切替時に⑩点検パックのUI（車種ドロップダウン・コース）を更新
+document.getElementById("isEV")?.addEventListener("change", ()=>{ syncInspectEVMode(); calc(); });
 
 document.querySelectorAll('input[name="region"]').forEach(el=>{
   el.addEventListener("change", ()=>{
