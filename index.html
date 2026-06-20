@@ -687,6 +687,78 @@
     </div>
   </div><!-- /#pageRefund -->
 
+  <!-- 隠しゲームボタン（右下固定） -->
+  <style>
+    #gameBtn{
+      position:fixed;bottom:14px;right:14px;z-index:999;
+      width:22px;height:22px;border-radius:50%;
+      background:transparent;border:none;outline:none;
+      font-size:12px;cursor:pointer;padding:0;line-height:1;
+      opacity:0.06;filter:grayscale(100%);
+      transition:opacity 0.3s,filter 0.3s,transform 0.2s;
+    }
+    @media(hover:hover){
+      #gameBtn:hover{opacity:0.4;filter:grayscale(40%);transform:scale(1.15);}
+    }
+    #gameBtn:active{opacity:0.3;filter:none;transform:none;}
+  </style>
+  <button id="gameBtn" type="button" title="">💣</button>
+
+  <!-- ========= ゲームページ ========= -->
+  <div id="pageGame" style="display:none;">
+    <style>
+      .ms-wrap{max-width:700px;margin:0 auto;padding:24px 16px;text-align:center;}
+      .ms-title{font-size:22px;font-weight:900;margin-bottom:16px;color:#1f4fbf;}
+      .ms-diff-row{display:flex;gap:8px;justify-content:center;margin-bottom:14px;flex-wrap:wrap;}
+      .ms-diff-btn{padding:8px 16px;border:2px solid #1f4fbf;border-radius:8px;background:#fff;cursor:pointer;font-size:13px;line-height:1.5;font-weight:700;transition:.15s;}
+      .ms-diff-btn.ms-diff-active{background:#1f4fbf;color:#fff;}
+      .ms-diff-btn:hover{opacity:.85;}
+      .ms-status-bar{display:flex;align-items:center;justify-content:space-between;background:#eef2ff;border-radius:10px;padding:8px 20px;margin-bottom:12px;max-width:360px;margin-left:auto;margin-right:auto;}
+      .ms-counter{font-size:18px;font-weight:900;min-width:70px;text-align:left;}
+      .ms-counter:last-child{text-align:right;}
+      .ms-reset-btn{font-size:30px;background:none;border:none;cursor:pointer;line-height:1;}
+      .ms-board-wrap{overflow:auto;display:flex;justify-content:center;margin-bottom:16px;}
+      .ms-board{display:inline-grid;gap:2px;background:#8e9aaf;padding:4px;border-radius:6px;border:3px solid #5a6476;touch-action:none;}
+      .ms-cell{width:30px;height:30px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;cursor:pointer;border-radius:3px;user-select:none;-webkit-touch-callout:none;box-sizing:border-box;}
+      .ms-cell.hidden{background:#c5cfe0;border:2px outset #dde5f0;}
+      .ms-cell.hidden:hover{background:#d5dcee;}
+      .ms-cell.revealed{background:#e8ecf5;border:1px solid #b0b8cc;}
+      .ms-cell.flagged{background:#c5cfe0;border:2px outset #dde5f0;}
+      .ms-cell.mine-hit{background:#ff5555;}
+      .ms-cell.mine-shown{background:#e8ecf5;border:1px solid #b0b8cc;}
+      .ms-num-1{color:#0000cc;}.ms-num-2{color:#006600;}.ms-num-3{color:#cc0000;}
+      .ms-num-4{color:#000099;}.ms-num-5{color:#990000;}.ms-num-6{color:#009999;}
+      .ms-num-7{color:#111;}.ms-num-8{color:#555;}
+      .ms-message{margin:0 auto 8px;padding:12px 20px;border-radius:10px;font-size:18px;font-weight:900;max-width:360px;}
+      .ms-message.win{background:#d4edda;color:#155724;}
+      .ms-message.lose{background:#f8d7da;color:#721c24;}
+      .ms-hint{font-size:12px;color:#777;margin-top:8px;}
+    </style>
+    <div class="top">
+      <div class="btnRow">
+        <button class="btn btnBig" id="backToFeeFromGame" type="button">← 戻る</button>
+      </div>
+    </div>
+    <div class="ms-wrap">
+      <div class="ms-title">💣 マインスイーパー</div>
+      <div class="ms-diff-row">
+        <button class="ms-diff-btn ms-diff-active" data-diff="easy">初級<br><small>9×9 / 地雷10</small></button>
+        <button class="ms-diff-btn" data-diff="medium">中級<br><small>16×16 / 地雷40</small></button>
+        <button class="ms-diff-btn" data-diff="hard">上級<br><small>30×16 / 地雷99</small></button>
+      </div>
+      <div class="ms-status-bar">
+        <span class="ms-counter" id="msMineCount">💣 10</span>
+        <button class="ms-reset-btn" id="msResetBtn" title="リセット">😊</button>
+        <span class="ms-counter" id="msTimer">⏱ 0</span>
+      </div>
+      <div id="msMessage" class="ms-message" style="display:none;"></div>
+      <div class="ms-board-wrap">
+        <div id="msBoard" class="ms-board"></div>
+      </div>
+      <div class="ms-hint">左クリック：開く ／ 右クリック：旗を立てる</div>
+    </div>
+  </div><!-- /#pageGame -->
+
 </div>
 
 <script>
@@ -2310,6 +2382,266 @@ rtClearBtn?.addEventListener("click", clearRefundInputs);
 // 入力を変えたら自動で再計算（押し忘れ防止）
 [rtEngine, rtCancelMonth, rtIsSurcharge, rtFirstYear, rtFirstMonth].forEach(el=>{
   el?.addEventListener("change", ()=>{ try{ updateFirstDisplay(); }catch(e){} try{ calcRefund(); }catch(e){} });
+});
+
+/** ========= ゲームページ ナビゲーション ========= **/
+const pageGame = document.getElementById("pageGame");
+const gameBtn  = document.getElementById("gameBtn");
+const backToFeeFromGame = document.getElementById("backToFeeFromGame");
+
+function showGamePage(){
+  pageFee.style.display    = "none";
+  pageRefund.style.display = "none";
+  pageGame.style.display   = "block";
+  window.scrollTo({top:0, behavior:"smooth"});
+  msStartGame();
+}
+function showFeePageFromGame(){
+  pageGame.style.display = "none";
+  pageFee.style.display  = "block";
+  window.scrollTo({top:0, behavior:"smooth"});
+  msStopTimer();
+}
+// PC: クリックで開く / スマホ: 1秒長押しでのみ開く
+(()=>{
+  if(!gameBtn) return;
+  let gbTimer=null, gbLong=false;
+  const isTouchDevice=()=>window.matchMedia("(hover:none)").matches;
+
+  gameBtn.addEventListener("touchstart", e=>{
+    gbLong=false;
+    gbTimer=setTimeout(()=>{ gbLong=true; showGamePage(); }, 1000);
+  },{passive:true});
+  gameBtn.addEventListener("touchmove", ()=>{
+    if(gbTimer){ clearTimeout(gbTimer); gbTimer=null; }
+  },{passive:true});
+  gameBtn.addEventListener("touchend", e=>{
+    if(gbTimer){ clearTimeout(gbTimer); gbTimer=null; }
+    if(gbLong) e.preventDefault();
+  });
+  gameBtn.addEventListener("click", e=>{
+    if(isTouchDevice()) return; // スマホはタッチイベントで処理
+    showGamePage();
+  });
+})();
+backToFeeFromGame?.addEventListener("click", showFeePageFromGame);
+
+/** ========= マインスイーパー ========= **/
+const MS_CONFIGS = {
+  easy:   {rows:9,  cols:9,  mines:10},
+  medium: {rows:16, cols:16, mines:40},
+  hard:   {rows:16, cols:30, mines:99}
+};
+
+let msState = {
+  diff:"easy", rows:9, cols:9, mines:10,
+  board:[], revealed:[], flagged:[],
+  gameOver:false, won:false, started:false,
+  timerInterval:null, timeElapsed:0
+};
+
+function msStopTimer(){
+  if(msState.timerInterval){ clearInterval(msState.timerInterval); msState.timerInterval=null; }
+}
+function msStartTimer(){
+  msStopTimer();
+  msState.timerInterval = setInterval(()=>{
+    if(msState.timeElapsed < 999){ msState.timeElapsed++; msUpdateStatus(); }
+  }, 1000);
+}
+
+function msInitBoard(firstR, firstC){
+  const {rows, cols, mines} = msState;
+  const total = rows * cols;
+  msState.board    = new Array(total).fill(0);
+  msState.revealed = new Array(total).fill(false);
+  msState.flagged  = new Array(total).fill(false);
+
+  // 最初のクリック周囲を地雷禁止ゾーンに
+  const forbidden = new Set();
+  for(let dr=-1; dr<=1; dr++) for(let dc=-1; dc<=1; dc++){
+    const r=firstR+dr, c=firstC+dc;
+    if(r>=0&&r<rows&&c>=0&&c<cols) forbidden.add(r*cols+c);
+  }
+
+  let placed=0;
+  while(placed < mines){
+    const idx = Math.floor(Math.random()*total);
+    if(msState.board[idx]===-1 || forbidden.has(idx)) continue;
+    msState.board[idx]=-1; placed++;
+  }
+
+  // 隣接地雷数を計算
+  for(let r=0; r<rows; r++) for(let c=0; c<cols; c++){
+    const idx=r*cols+c;
+    if(msState.board[idx]===-1) continue;
+    let cnt=0;
+    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+      const nr=r+dr, nc=c+dc;
+      if(nr>=0&&nr<rows&&nc>=0&&nc<cols&&msState.board[nr*cols+nc]===-1) cnt++;
+    }
+    msState.board[idx]=cnt;
+  }
+}
+
+function msRevealCell(r, c){
+  const {rows, cols} = msState;
+  const idx = r*cols+c;
+  if(msState.revealed[idx]||msState.flagged[idx]) return;
+  msState.revealed[idx]=true;
+  if(msState.board[idx]===0){
+    for(let dr=-1;dr<=1;dr++) for(let dc=-1;dc<=1;dc++){
+      const nr=r+dr, nc=c+dc;
+      if(nr>=0&&nr<rows&&nc>=0&&nc<cols) msRevealCell(nr,nc);
+    }
+  }
+}
+
+function msCountFlags(){ return msState.flagged.filter(Boolean).length; }
+
+function msCheckWin(){
+  const total=msState.rows*msState.cols;
+  return msState.revealed.filter(Boolean).length === total - msState.mines;
+}
+
+function msUpdateStatus(){
+  const mineEl=document.getElementById("msMineCount");
+  const timerEl=document.getElementById("msTimer");
+  const resetBtn=document.getElementById("msResetBtn");
+  if(mineEl)  mineEl.textContent  = `💣 ${msState.mines - msCountFlags()}`;
+  if(timerEl) timerEl.textContent = `⏱ ${msState.timeElapsed}`;
+  if(resetBtn) resetBtn.textContent = msState.won?"😎":msState.gameOver?"😵":"😊";
+}
+
+function msRenderBoard(){
+  const {rows, cols} = msState;
+  const board = document.getElementById("msBoard");
+  if(!board) return;
+  board.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+  board.innerHTML="";
+
+  for(let r=0; r<rows; r++){
+    for(let c=0; c<cols; c++){
+      const idx=r*cols+c;
+      const cell=document.createElement("div");
+      cell.className="ms-cell";
+      cell.dataset.r=r; cell.dataset.c=c;
+
+      if(msState.revealed[idx]){
+        const v=msState.board[idx];
+        if(v===-1){ cell.classList.add("revealed","mine-hit"); cell.textContent="💥"; }
+        else { cell.classList.add("revealed"); if(v>0){ cell.textContent=v; cell.classList.add(`ms-num-${v}`); } }
+      } else if(msState.flagged[idx]){
+        cell.classList.add("flagged"); cell.textContent="🚩";
+      } else {
+        cell.classList.add("hidden");
+        if((msState.gameOver||msState.won) && msState.board[idx]===-1){
+          cell.classList.add("mine-shown"); cell.textContent="💣";
+        }
+      }
+      board.appendChild(cell);
+    }
+  }
+}
+
+function msStartGame(){
+  msStopTimer();
+  const cfg=MS_CONFIGS[msState.diff];
+  Object.assign(msState, {rows:cfg.rows, cols:cfg.cols, mines:cfg.mines,
+    board:[], revealed:[], flagged:[],
+    gameOver:false, won:false, started:false, timeElapsed:0});
+  const msgEl=document.getElementById("msMessage");
+  if(msgEl){ msgEl.style.display="none"; msgEl.textContent=""; msgEl.className="ms-message"; }
+  msRenderBoard();
+  msUpdateStatus();
+}
+
+// クリックイベント（委譲）
+document.getElementById("msBoard")?.addEventListener("click", e=>{
+  const cell=e.target.closest(".ms-cell");
+  if(!cell||msState.gameOver||msState.won) return;
+  const r=+cell.dataset.r, c=+cell.dataset.c;
+  const idx=r*msState.cols+c;
+  if(msState.revealed[idx]||msState.flagged[idx]) return;
+
+  if(!msState.started){ msInitBoard(r,c); msState.started=true; msStartTimer(); }
+
+  if(msState.board[idx]===-1){
+    msState.revealed[idx]=true; msState.gameOver=true; msStopTimer();
+    for(let i=0;i<msState.board.length;i++) if(msState.board[i]===-1) msState.revealed[i]=true;
+    msRenderBoard(); msUpdateStatus();
+    const m=document.getElementById("msMessage");
+    if(m){m.textContent="💥 ゲームオーバー！もう一度挑戦しよう"; m.className="ms-message lose"; m.style.display="block";}
+    return;
+  }
+
+  msRevealCell(r,c);
+
+  if(msCheckWin()){
+    msState.won=true; msStopTimer();
+    msRenderBoard(); msUpdateStatus();
+    const m=document.getElementById("msMessage");
+    if(m){m.textContent=`🎉 クリア！ ${msState.timeElapsed}秒`; m.className="ms-message win"; m.style.display="block";}
+    return;
+  }
+  msRenderBoard(); msUpdateStatus();
+});
+
+// 右クリック（旗）- PC用
+document.getElementById("msBoard")?.addEventListener("contextmenu", e=>{
+  e.preventDefault();
+  const cell=e.target.closest(".ms-cell");
+  if(!cell||msState.gameOver||msState.won) return;
+  const idx=+cell.dataset.r*msState.cols + +cell.dataset.c;
+  if(msState.revealed[idx]) return;
+  msState.flagged[idx]=!msState.flagged[idx];
+  msRenderBoard(); msUpdateStatus();
+});
+
+// タッチ操作（スマホ）: 長押し500ms → 旗、短タップ → 開く
+(()=>{
+  const board=document.getElementById("msBoard");
+  if(!board) return;
+  let touchTimer=null, longPressed=false, touchCell=null;
+
+  const msToggleFlag=(cell)=>{
+    if(!cell||msState.gameOver||msState.won) return;
+    const idx=+cell.dataset.r*msState.cols + +cell.dataset.c;
+    if(msState.revealed[idx]) return;
+    msState.flagged[idx]=!msState.flagged[idx];
+    msRenderBoard(); msUpdateStatus();
+    if(navigator.vibrate) navigator.vibrate(40);
+  };
+
+  board.addEventListener("touchstart", e=>{
+    const cell=e.target.closest(".ms-cell");
+    touchCell=cell; longPressed=false;
+    if(!cell||msState.gameOver||msState.won) return;
+    touchTimer=setTimeout(()=>{
+      longPressed=true; touchTimer=null;
+      msToggleFlag(cell);
+    }, 500);
+  }, {passive:true});
+
+  board.addEventListener("touchmove", ()=>{
+    if(touchTimer){ clearTimeout(touchTimer); touchTimer=null; }
+  }, {passive:true});
+
+  board.addEventListener("touchend", e=>{
+    if(touchTimer){ clearTimeout(touchTimer); touchTimer=null; }
+    if(longPressed){ e.preventDefault(); longPressed=false; }
+  });
+})();
+
+// リセットボタン・難易度ボタン
+document.getElementById("msResetBtn")?.addEventListener("click", msStartGame);
+document.querySelectorAll(".ms-diff-btn").forEach(btn=>{
+  btn.addEventListener("click", ()=>{
+    document.querySelectorAll(".ms-diff-btn").forEach(b=>b.classList.remove("ms-diff-active"));
+    btn.classList.add("ms-diff-active");
+    msState.diff=btn.dataset.diff;
+    msStartGame();
+  });
 });
 
 </script>
