@@ -280,6 +280,29 @@
 
     /* ページ余白 */
     @page { margin: 15mm 12mm; }
+
+    /* ===== チェックリスト付き印刷モード ===== */
+    body.print-with-checklist #checklistSection { display: block !important; }
+
+    body.print-with-checklist .result { margin-bottom: 3px !important; }
+    body.print-with-checklist .resultTop { margin-bottom: 2px !important; }
+    body.print-with-checklist .total { font-size: 13px !important; }
+    body.print-with-checklist .status { font-size: 10px !important; }
+    body.print-with-checklist .tblwrap table { font-size: 9px !important; }
+    body.print-with-checklist .tblwrap table td,
+    body.print-with-checklist .tblwrap table th { padding: 1px 3px !important; line-height: 1.2 !important; }
+    body.print-with-checklist .tblwrap table thead th { font-size: 9px !important; }
+    body.print-with-checklist #printHeader { margin-bottom: 3px !important; }
+    body.print-with-checklist #printHeader > div:first-child { font-size: 12px !important; }
+    body.print-with-checklist #printHeader > div:last-child { font-size: 9px !important; }
+    body.print-with-checklist .result > .hint { display: none !important; }
+
+    body.print-with-checklist #checklistSection { margin-top: 3px !important; font-size: 8px !important; }
+    body.print-with-checklist #checklistSection table { font-size: 8px !important; }
+    body.print-with-checklist #checklistSection td,
+    body.print-with-checklist #checklistSection th { padding: 1px 3px !important; line-height: 1.3 !important; }
+    body.print-with-checklist #checklistSection { page-break-inside: avoid; }
+    body.print-with-checklist * { page-break-inside: avoid; }
   }
 </style>
 </head>
@@ -294,6 +317,8 @@
       <button class="btn" id="recalcBtn" type="button">再計算</button>
       <button class="btn btnBig btnAccent" id="refundBtn" type="button">自動車税 還付計算へ</button>
       <button class="btn btnBig" id="printBtn" type="button" style="background:#fff;border-color:#1f4fbf;color:#1f4fbf;">🖨️ 計算結果を印刷</button>
+      <button class="btn btnBig" id="printCheckBtn" type="button" style="background:#fff;border-color:#e07000;color:#e07000;">📋 チェックリスト付きで印刷</button>
+      <button class="btn btnBig" id="usedCarBtn" type="button" style="background:#fff;border-color:#2e7d32;color:#2e7d32;">🚗 中古車諸費用計算へ</button>
     </div>
     <div class="hint" id="ruleHint"></div>
   </div>
@@ -564,6 +589,262 @@
         ※課税分の「R発行費用/振込手数料」に、必要時のみ残債手数料(880円)を合算して1行表示します
       </div>
     </div>
+
+    <!-- ===== チェックリスト（印刷時のみ表示） ===== -->
+    <div id="checklistSection" style="display:none; margin-top:4px; font-family:sans-serif; font-size:8.5px;">
+
+      <!-- 上段：商談時確認項目 -->
+      <table style="width:100%;border-collapse:collapse;font-size:8.5px;margin-bottom:2px;">
+        <tbody>
+          <tr>
+            <td colspan="10" style="background:#1f4fbf;color:#fff;text-align:center;font-weight:900;padding:3px 4px;font-size:10px;border:1px solid #888;">
+              商談時確認項目（見積もり値引き提示前までに確認する）
+              <span style="font-size:8.5px;font-weight:600;margin-left:10px;">契約書作成時には 全内容の確認が必要</span>
+            </td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #999;padding:2px 5px;font-weight:700;background:#f7f7f7;width:18%;">併有車確認</td>
+            <td style="border:1px solid #999;padding:2px 5px;width:12%;">あり　無し</td>
+            <td style="border:1px solid #999;padding:2px 5px;width:8%;">　　台</td>
+            <td colspan="7" style="border:1px solid #999;padding:2px 5px;"></td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #999;padding:2px 5px;font-weight:700;background:#f7f7f7;">保険加入状況確認</td>
+            <td style="border:1px solid #999;padding:2px 5px;">OK　まだ</td>
+            <td style="border:1px solid #999;padding:2px 5px;"></td>
+            <td colspan="7" style="border:1px solid #999;padding:2px 5px;">□提案できる予定　　□できない・理由：</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #999;padding:2px 5px;font-weight:700;background:#f7f7f7;">携帯電話確認</td>
+            <td style="border:1px solid #999;padding:2px 5px;">OK　まだ</td>
+            <td style="border:1px solid #999;padding:2px 5px;"></td>
+            <td colspan="7" style="border:1px solid #999;padding:2px 5px;">未獲得の場合理由：</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #999;padding:2px 5px;font-weight:700;background:#f7f7f7;">HTCプレミアム　加入意向</td>
+            <td style="border:1px solid #999;padding:2px 5px;">あり　無し</td>
+            <td style="border:1px solid #999;padding:2px 5px;"></td>
+            <td colspan="7" style="border:1px solid #999;padding:2px 5px;">未加入の場合理由：</td>
+          </tr>
+          <tr>
+            <td style="border:1px solid #999;padding:2px 5px;font-weight:700;background:#f7f7f7;">登録　納車延期理由あり</td>
+            <td style="border:1px solid #999;padding:2px 5px;">あり　<u><b>無し</b></u></td>
+            <td style="border:1px solid #999;padding:2px 5px;"></td>
+            <td colspan="7" style="border:1px solid #999;padding:2px 5px;">ありの場合は理由：</td>
+          </tr>
+          <tr>
+            <td colspan="10" style="border:1px solid #999;padding:2px 5px;font-size:8px;background:#fffde7;">
+              ↑この項目は聞くのではなく　登録、納車は入庫次第いたしますので○月○日入庫なので　○月頃の登録納車になります<br>
+              と言ってお客様が条件を出してくる場合なのであえて聞くことの無いように
+            </td>
+          </tr>
+          <!-- 確認印欄 -->
+          <tr>
+            <td colspan="10" style="padding:0;border:none;">
+              <table style="width:100%;border-collapse:collapse;table-layout:fixed;">
+                <colgroup>
+                  <col style="width:16.66%"><col style="width:16.66%"><col style="width:16.66%">
+                  <col style="width:16.66%"><col style="width:16.66%"><col style="width:16.66%">
+                </colgroup>
+                <tr>
+                  <td style="border:1px solid #999;padding:2px;text-align:center;background:#d6e4ff;font-size:7.5px;font-weight:700;line-height:1.3;">見積作成中<br>営業確認（任意）</td>
+                  <td style="border:1px solid #999;padding:2px;text-align:center;background:#d6e4ff;font-size:7.5px;font-weight:700;line-height:1.3;">契約書作成時<br>営業確認（必須）</td>
+                  <td style="border:1px solid #999;padding:2px;text-align:center;background:#d6e4ff;font-size:7.5px;font-weight:700;line-height:1.3;">契約書作成時<br>店長確認（必須）</td>
+                  <td style="border:1px solid #999;padding:2px;text-align:center;background:#d5f0d5;font-size:7.5px;font-weight:700;line-height:1.3;">契約書作成後<br>営業提出前確認</td>
+                  <td style="border:1px solid #999;padding:2px;text-align:center;background:#d5f0d5;font-size:7.5px;font-weight:700;line-height:1.3;">契約書作成後<br>店長確認</td>
+                  <td style="border:1px solid #999;padding:2px;text-align:center;background:#d5f0d5;font-size:7.5px;font-weight:700;line-height:1.3;">受注台帳入力後<br>CA確認</td>
+                </tr>
+                <tr>
+                  <td style="border:1px solid #999;padding:0;background:#d6e4ff;"><div style="position:relative;width:100%;padding-top:100%;"><span style="position:absolute;bottom:2px;right:3px;font-size:7px;">印</span></div></td>
+                  <td style="border:1px solid #999;padding:0;background:#d6e4ff;"><div style="position:relative;width:100%;padding-top:100%;"><span style="position:absolute;bottom:2px;right:3px;font-size:7px;">印</span></div></td>
+                  <td style="border:1px solid #999;padding:0;background:#d6e4ff;"><div style="position:relative;width:100%;padding-top:100%;"><span style="position:absolute;bottom:2px;right:3px;font-size:7px;">印</span></div></td>
+                  <td style="border:1px solid #999;padding:0;background:#d5f0d5;"><div style="position:relative;width:100%;padding-top:100%;"><span style="position:absolute;bottom:2px;right:3px;font-size:7px;">印</span></div></td>
+                  <td style="border:1px solid #999;padding:0;background:#d5f0d5;"><div style="position:relative;width:100%;padding-top:100%;"><span style="position:absolute;bottom:2px;right:3px;font-size:7px;">印</span></div></td>
+                  <td style="border:1px solid #999;padding:0;background:#d5f0d5;"><div style="position:relative;width:100%;padding-top:100%;"><span style="position:absolute;bottom:2px;right:3px;font-size:7px;">印</span></div></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+      <!-- 下段：契約後フォーム -->
+      <table style="width:100%;border-collapse:collapse;font-size:10px;border:1px solid #888;">
+        <thead>
+          <tr>
+            <td colspan="10" style="background:#1f4fbf;color:#fff;text-align:center;font-weight:900;padding:3px 4px;font-size:10px;border-bottom:1px solid #888;">
+              契約後　契約書コピーと提出
+            </td>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <!-- 左カラム -->
+            <td style="vertical-align:top;border-right:2px solid #888;padding:0;width:52%;">
+              <table style="width:100%;border-collapse:collapse;font-size:10px;">
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;width:22%;background:#f7f7f7;height:36px;">名前</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;width:78%;height:36px;"></td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">源泉</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;font-size:10px;">1A　1B　1C　2　3A　3B　3C　4C　4D</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">確定</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;">完了　未完了（　　/　　予定）</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">オーダー</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;">オーダー　在庫　未入庫在庫</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">オーダーNO</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;"></td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">点検パック</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;font-size:10px;">長期車検　長期　車検付き　車検なし　なし</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">長期保証</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;">自社　メーカー　無し</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">ＪＡＦ</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;">既加入　加入　未加入</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">ドラレコ</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;font-size:10px;">純正　純正リア　外品　外品リア　なし</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">ライフレ</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;">セット　ライフレ　なし</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">コート</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;font-size:10px;">EXキーパー　G-ZOX　グラシス　なし</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">アルミコート</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;">あり　なし</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">フロアマット</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;">DX　STD　プリテ　無限　なし</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">シートコート</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;">あり　なし　ナノゾーン　あり　なし</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">アンダーコート</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;">あり　なし</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">希望ナンバー</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;font-size:10px;">図柄寄付　図柄　希望　なし</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">任意保険</td>
+                  <td style="border-bottom:1px solid #ccc;padding:5px 6px;font-size:10px;">純新規　他社新規　コピー　自加入　他加入</td>
+                </tr>
+                <tr>
+                  <td style="border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">他加入の場合</td>
+                  <td style="padding:5px 6px;font-size:10px;">保険会社：　　　状況：　提案する　提案拒否</td>
+                </tr>
+              </table>
+            </td>
+
+            <!-- 右カラム -->
+            <td style="vertical-align:top;padding:0;width:48%;">
+              <table style="width:100%;border-collapse:collapse;font-size:10px;">
+                <tr>
+                  <td rowspan="2" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#e8f1ff;width:22%;vertical-align:middle;">内容</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:3px 6px;font-size:9px;background:#e8f1ff;">HF残クレ　HF通クレ　自社クレ　バリ保</td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:3px 6px;background:#e8f1ff;">楽まる　現金　なし</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">支払い</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;"></td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">頭金</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">　　　　　円　金利　　　　　%</td>
+                </tr>
+                <tr>
+                  <td style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">所要資金</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">　　　　　　円</td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">入庫日</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">入庫済・　　月　　日　日内入庫</td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">登録予定日</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">　月　　日　確定・予定</td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">納車予定日</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">　月　　日　確定・予定</td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">諸費用回収日</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">　月　　日　確定・予定</td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">査定額</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">　　　　　　円　商事　カー7</td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">所有権</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">あり　なし</td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;background:#f7f7f7;"></td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">あり　なし</td>
+                </tr>
+                <!-- 下取りありの場合 -->
+                <tr>
+                  <td rowspan="6" style="border-right:1px solid #ccc;padding:4px 3px;font-weight:700;font-size:9px;vertical-align:middle;background:#fff8e1;text-align:center;width:12%;">下取あり<br>の場合</td>
+                  <td colspan="2" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">残債</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">　月末までに処理</td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">住所</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">変更有　変更なし</td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;background:#f7f7f7;"></td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">不要</td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">代車</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">必要　契約書内　契約書外</td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="border-bottom:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">代車手配</td>
+                  <td colspan="3" style="border-bottom:1px solid #ccc;padding:5px 6px;">店長　担当　不明</td>
+                </tr>
+                <tr>
+                  <td colspan="2" style="border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;"></td>
+                  <td colspan="3" style="padding:2px 4px;"></td>
+                </tr>
+                <tr>
+                  <td colspan="3" style="border-top:1px solid #ccc;border-right:1px solid #ccc;padding:5px 6px;font-weight:700;background:#f7f7f7;">その他　備考</td>
+                  <td colspan="3" style="border-top:1px solid #ccc;padding:5px 6px;height:24px;"></td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+
+    </div><!-- /#checklistSection -->
+
   </form>
 
 
@@ -687,6 +968,221 @@
     </div>
   </div><!-- /#pageRefund -->
 
+  <!-- ========= 中古車 / 未使用車 諸費用ページ ========= -->
+  <div id="pageUsedCar" style="display:none;background:#FFF3EC;min-height:100vh;">
+    <div class="top">
+      <div class="btnRow">
+        <button class="btn btnBig" id="backToFeeFromUsed" type="button">← 戻る</button>
+        <button class="btn" id="resetUsedBtn" type="button">選択を解除</button>
+      </div>
+      <div class="hint">中古車・未使用車の諸費用を計算します（2026/4/1現在）。</div>
+    </div>
+
+    <form id="usedCarForm">
+      <div class="grid">
+
+<section class="card">
+          <h3><span class="chip">①</span> 車種</h3>
+          <div class="options cols2">
+            <label class="opt"><input type="radio" name="uc_car" value="軽"><span>軽自動車</span></label>
+            <label class="opt"><input type="radio" name="uc_car" value="小型"><span>小型（普通）</span></label>
+            <label class="opt" id="uc_importOpt"><input type="radio" name="uc_car" value="輸入"><span>輸入車</span></label>
+            <label class="opt" id="uc_gyohanOpt" style="display:none;"><input type="radio" name="uc_car" value="業販"><span>業販</span><small>柏木のみ</small></label>
+          </div>
+        </section>
+
+        <section class="card" id="uc_prefCard">
+          <h3><span class="chip">②</span> 都道府県</h3>
+          <div class="options cols2">
+            <label class="opt"><input type="radio" name="uc_pref" value="奈良県"><span>奈良県</span></label>
+            <label class="opt"><input type="radio" name="uc_pref" value="京都府"><span>京都府</span></label>
+            <label class="opt"><input type="radio" name="uc_pref" value="大阪府"><span>大阪府</span></label>
+            <label class="opt"><input type="radio" name="uc_pref" value="滋賀県"><span>滋賀県</span></label>
+            <label class="opt"><input type="radio" name="uc_pref" value="和歌山県"><span>和歌山県</span></label>
+            <label class="opt"><input type="radio" name="uc_pref" value="三重県"><span>三重県</span></label>
+            <label class="opt"><input type="radio" name="uc_pref" value="兵庫県"><span>兵庫県</span></label>
+          </div>
+        </section>
+
+        <section class="card" id="uc_shakoCard">
+          <h3><span class="chip">③</span> 車庫証明</h3>
+          <div class="options cols2">
+            <label class="opt"><input type="radio" name="uc_shako" value="必要"><span>必要</span></label>
+            <label class="opt"><input type="radio" name="uc_shako" value="不要"><span>不要</span></label>
+          </div>
+        </section>
+
+        <section class="card" id="uc_regCard">
+          <h3><span class="chip">④</span> 登録種別</h3>
+          <div class="options cols2">
+            <label class="opt"><input type="radio" name="uc_reg" value="移転登録"><span>移転登録</span><small>車検付き納車</small></label>
+            <label class="opt"><input type="radio" name="uc_reg" value="中古新規"><span>中古新規</span><small>車検受け納車（+車検代行費）</small></label>
+          </div>
+        </section>
+
+        <section class="card span2" id="uc_plateCard">
+          <h3><span class="chip">⑤</span> 標板（ナンバープレート）</h3>
+          <div class="options cols3">
+            <label class="opt"><input type="radio" name="uc_plate" value="番号変更なし"><span>番号変更なし</span></label>
+            <label class="opt"><input type="radio" name="uc_plate" value="一般番号"><span>一般番号</span></label>
+            <label class="opt"><input type="radio" name="uc_plate" value="希望番号"><span>希望番号</span></label>
+            <label class="opt"><input type="radio" name="uc_plate" value="希望図柄番号"><span>希望図柄番号</span></label>
+            <label class="opt"><input type="radio" name="uc_plate" value="字光式一般"><span>字光式（一般）</span></label>
+            <label class="opt"><input type="radio" name="uc_plate" value="字光式希望"><span>字光式（希望）</span></label>
+          </div>
+
+          <div id="uc_patternBox" class="disabled" style="margin-top:10px;">
+            <div class="noteSmall" style="margin:0 0 8px;">図柄（希望図柄番号のとき）</div>
+            <div class="options cols3">
+              <label class="opt"><input type="radio" name="uc_pattern" value="ご当地"><span>ご当地</span></label>
+              <label class="opt"><input type="radio" name="uc_pattern" value="全国図柄"><span>全国図柄</span></label>
+              <label class="opt"><input type="radio" name="uc_pattern" value="園芸博図柄"><span>園芸博図柄</span></label>
+            </div>
+            <div style="height:8px;"></div>
+            <div class="options cols2">
+              <label class="opt"><input type="radio" name="uc_patternColor" value="モノトーン"><span>モノトーン</span><small>寄付金なし</small></label>
+              <label class="opt"><input type="radio" name="uc_patternColor" value="カラー"><span>カラー</span><small>寄付金 1,000円（課税）</small></label>
+            </div>
+          </div>
+          <div class="noteSmall" style="margin-top:6px;">※字光式は希望図柄番号不可 ／ 希望番号・図柄希望番号はナンバー代・証紙代・申請費込み</div>
+        </section>
+
+        <section class="card span2" id="uc_tradeCard">
+          <h3><span class="chip">⑥</span> 下取り / 所有者 / 残債</h3>
+          <div class="options cols2">
+            <label class="opt"><input type="radio" name="uc_trade" value="あり"><span>下取りあり</span></label>
+            <label class="opt"><input type="radio" name="uc_trade" value="なし"><span>下取りなし</span></label>
+          </div>
+          <div id="uc_ownerBox" style="margin-top:10px; display:none;">
+            <div class="noteSmall" style="margin:0 0 8px;">所有者（下取りありのとき）</div>
+            <div class="options cols2">
+              <label class="opt"><input type="radio" name="uc_owner" value="お客様"><span>所有権 お客様</span></label>
+              <label class="opt"><input type="radio" name="uc_owner" value="信販会社"><span>所有権 信販会社</span></label>
+            </div>
+          </div>
+          <div id="uc_loanBox" style="margin-top:10px; display:none;">
+            <div class="noteSmall" style="margin:0 0 8px;">残債（所有権が信販会社のとき）</div>
+            <div class="options cols2">
+              <label class="opt"><input type="radio" name="uc_loan" value="なし"><span>残債なし</span></label>
+              <label class="opt"><input type="radio" name="uc_loan" value="あり"><span>残債あり</span></label>
+            </div>
+          </div>
+        </section>
+
+        <section class="card" id="uc_lienCard">
+          <h3><span class="chip">⑦</span> 所有権留保（キンキ）</h3>
+          <div class="options cols2">
+            <label class="opt"><input type="radio" name="uc_lien" value="あり"><span>あり</span><small>手数料発生</small></label>
+            <label class="opt"><input type="radio" name="uc_lien" value="なし"><span>なし</span></label>
+          </div>
+        </section>
+
+        <section class="card" id="uc_outprefCard">
+          <h3><span class="chip">⑧</span> 他府県登録（店頭納車）</h3>
+          <div class="options cols2">
+            <label class="opt"><input type="radio" name="uc_outpref" value="なし"><span>なし</span></label>
+            <label class="opt"><input type="radio" name="uc_outpref" value="あり"><span>あり</span><small>+29,000円</small></label>
+          </div>
+        </section>
+
+        <section class="card" id="uc_deliveryCard">
+          <h3><span class="chip">⑨</span> 納車方法</h3>
+          <div class="options cols2">
+            <label class="opt"><input type="radio" name="uc_delivery" value="回送"><span>回送（奈良県）</span><small>21,000円</small></label>
+            <label class="opt"><input type="radio" name="uc_delivery" value="店頭"><span>店頭納車</span><small>0円</small></label>
+          </div>
+        </section>
+
+        <section class="card" id="uc_regMonthCard">
+          <h3><span class="chip">⑩</span> 登録予定年月</h3>
+          <div style="display:flex;gap:10px;align-items:center;padding-top:4px;flex-wrap:wrap;">
+            <select name="uc_regYear" style="padding:7px 10px;border:1px solid #ccc;border-radius:8px;font-size:1rem;background:#fff;">
+              <option value="">年</option>
+              <option value="2025">2025年</option>
+              <option value="2026">2026年</option>
+              <option value="2027">2027年</option>
+            </select>
+            <select name="uc_regMonth" style="padding:7px 10px;border:1px solid #ccc;border-radius:8px;font-size:1rem;background:#fff;">
+              <option value="">月</option>
+              <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+              <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+              <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+              <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+            </select>
+          </div>
+          <div class="noteSmall" style="margin-top:6px;">自動車税（軽以外）・自賠責保険（移転登録）の未経過月算出に使用</div>
+        </section>
+
+        <section class="card" id="uc_shokenCard" style="display:none;">
+          <h3><span class="chip">⑪</span> 車検満了年月</h3>
+          <div style="display:flex;gap:10px;align-items:center;padding-top:4px;flex-wrap:wrap;">
+            <select name="uc_shokenYear" style="padding:7px 10px;border:1px solid #ccc;border-radius:8px;font-size:1rem;background:#fff;">
+              <option value="">年</option>
+              <option value="2024">2024年</option>
+              <option value="2025">2025年</option>
+              <option value="2026">2026年</option>
+              <option value="2027">2027年</option>
+              <option value="2028">2028年</option>
+              <option value="2029">2029年</option>
+              <option value="2030">2030年</option>
+            </select>
+            <select name="uc_shokenMonth" style="padding:7px 10px;border:1px solid #ccc;border-radius:8px;font-size:1rem;background:#fff;">
+              <option value="">月</option>
+              <option value="1">1月</option><option value="2">2月</option><option value="3">3月</option>
+              <option value="4">4月</option><option value="5">5月</option><option value="6">6月</option>
+              <option value="7">7月</option><option value="8">8月</option><option value="9">9月</option>
+              <option value="10">10月</option><option value="11">11月</option><option value="12">12月</option>
+            </select>
+          </div>
+          <div class="noteSmall" style="margin-top:6px;">自賠責保険 未経過月の算出に使用（移転登録時のみ表示）</div>
+        </section>
+
+      </div>
+
+      <div class="result">
+        <div class="resultTop">
+          <div class="total">合計：<span id="uc_totalYen">0</span> 円</div>
+          <div class="status" id="uc_statusText">必須項目を選択してください</div>
+        </div>
+        <div class="rows" id="uc_resultRows"></div>
+        <div class="tblwrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:44%;">項目</th>
+                <th class="yen" style="width:18%;">金額</th>
+                <th style="width:38%;">備考</th>
+              </tr>
+            </thead>
+            <tbody id="uc_resultTbody"></tbody>
+            <tfoot>
+              <tr>
+                <td>非課税分小計</td>
+                <td class="yen" id="uc_nontaxYen">0</td>
+                <td></td>
+              </tr>
+            </tfoot>
+          </table>
+        </div>
+        <div id="uc_refCalcBox" style="margin-top:14px;padding:12px 16px;background:#fff8ee;border:1px solid #f0c070;border-radius:10px;display:none;">
+          <div style="font-weight:700;font-size:.9rem;margin-bottom:8px;color:#7a4800;">参考計算</div>
+          <div id="uc_jidouTaxRow" style="display:none;padding:5px 0;border-bottom:1px solid #f0c070;">
+            <span style="font-size:.9rem;">自動車税 未経過月</span>
+            <span id="uc_jidouTaxMonths" style="float:right;font-weight:700;font-size:1rem;"></span>
+          </div>
+          <div id="uc_jibaiRow" style="display:none;padding:5px 0;">
+            <span style="font-size:.9rem;">自賠責保険 未経過月</span>
+            <span id="uc_jibaiMonths" style="float:right;font-weight:700;font-size:1rem;"></span>
+          </div>
+        </div>
+        <div class="hint" style="margin-top:10px;">
+          ※非課税：車庫証明証紙代 / 検査登録証紙代 / ナンバー代 / 下取車諸手続<br>
+          ※希望番号・図柄希望番号の検査登録証紙代はナンバー申請費＋登録証紙代の合算
+        </div>
+      </div>
+    </form>
+  </div><!-- /#pageUsedCar -->
+
   <!-- 隠しゲームボタン（右下固定） -->
   <style>
     #gameBtn{
@@ -755,7 +1251,7 @@
       <div class="ms-board-wrap">
         <div id="msBoard" class="ms-board"></div>
       </div>
-      <div class="ms-hint">左クリック：開く ／ 右クリック：旗を立てる</div>
+      <div class="ms-hint" id="msHintText">左クリック：開く ／ 右クリック：旗 ／ スマホ長押し：旗</div>
     </div>
   </div><!-- /#pageGame -->
 
@@ -917,6 +1413,55 @@ const PUNCTURE_FEE = {
   p50: 7150,
   p100: 11550,
   p150: 16500
+};
+
+/** ========= 中古車 / 未使用車 料金表（2026/4/1） ========= **/
+const UC_REG_FEE = {
+  "シマダオート": { "軽": 45000, "小型": 55000, "輸入": 65000 },
+  "柏木":        { "軽": 52000, "小型": 62000 },
+  "U-Select":    { "軽": 32000, "小型": 41000, "輸入": 158000 }
+};
+const UC_SHAKO_FEE = {
+  "シマダオート": { "軽": 19800, "小型": 25800, "輸入": 27800 },
+  "柏木":        { "軽": 21800, "小型": 27800 },
+  "U-Select":    { "軽": 15000, "小型": 20000, "輸入": 31000 }
+};
+const UC_TRADEIN_FEE = {
+  "シマダオート": { "軽": 20000, "小型": 20000, "輸入": 22000 },
+  "柏木":        { "軽": 20000, "小型": 20000 },
+  "U-Select":    { "軽": 20000, "小型": 20000, "輸入": 22000 }
+};
+const UC_INSPECTION_FEE = {
+  "シマダオート": { "軽": 23800, "小型": 27800, "輸入": 27800 },
+  "柏木":        { "軽": 33000, "小型": 35000 },
+  "U-Select":    { "軽": 21800, "小型": 24800, "輸入": 31000 }
+};
+const UC_HOPE_FEE = {
+  "シマダオート": { "軽": 19800, "小型": 19800, "輸入": 19800 },
+  "柏木":        { "軽": 19800, "小型": 19800 },
+  "U-Select":    { "軽": 19800, "小型": 19800, "輸入": 21000 }
+};
+const UC_DESIGN_FEE = {
+  "シマダオート": { "軽": 21000, "小型": 21000, "輸入": 21000 },
+  "柏木":        { "軽": 21000, "小型": 21000 },
+  "U-Select":    { "軽": 21000, "小型": 21000, "輸入": 25000 }
+};
+const UC_LIEN_FEE = {
+  "シマダオート": { "軽": 9800, "小型": 9800, "輸入": 9800 },
+  "柏木":        { "軽": 9800, "小型": 9800 },
+  "U-Select":    { "軽": 9800, "小型": 9800, "輸入": 10000 }
+};
+const UC_JIKOU_TOOL = {
+  "シマダオート": { "軽": 28000, "小型": 28000, "輸入": 28000 },
+  "柏木":        { "軽": 28000, "小型": 28000 },
+  "U-Select":    { "軽": 28000, "小型": 28000, "輸入": 30000 }
+};
+const UC_DELIVERY  = 21000;
+const UC_OUT_PREF  = 29000;
+const UC_DOCS_PREP = 30000;
+const UC_STAMP = {
+  "移転登録": { "軽四": 0,    "小型": 700  },
+  "中古新規": { "軽四": 2000, "小型": 3300 }
 };
 
 /** ========= UI / 計算 ========= **/
@@ -1235,6 +1780,7 @@ function autoMamoruFromVehicleClass(vClass){
 
 function syncMamoruByVehicleClass(){
   if(!inspectVehicleClassEl || !mamoruClassEl) return;
+  if(mamoruClassEl.dataset.userSelected === "1") return;
   const raw = inspectVehicleClassEl.value || "auto";
   const vClass = (raw === "auto") ? getAutoVehicleClass() : raw;
   const autoVal = autoMamoruFromVehicleClass(vClass);
@@ -2050,6 +2596,21 @@ if(mamoruClearBtn){
   });
 }
 
+// マモルを手動変更した場合もフラグON
+if(mamoruClassEl){
+  mamoruClassEl.addEventListener("change", ()=>{
+    mamoruClassEl.dataset.userSelected = "1";
+  });
+}
+
+// パックタイプ切替時はマモル自動同期を再開
+document.querySelectorAll('input[name="inspectPackType"]').forEach(el=>{
+  el.addEventListener("change", ()=>{
+    if(mamoruClassEl) mamoruClassEl.dataset.userSelected = "0";
+    syncMamoruByVehicleClass();
+  });
+});
+
 form.addEventListener("change", calc);
 
 /** ========= 印刷 ========= **/
@@ -2067,6 +2628,23 @@ document.getElementById("printBtn")?.addEventListener("click", ()=>{
   const el = document.getElementById("printMeta");
   if(el) el.textContent = meta;
   window.print();
+});
+
+document.getElementById("printCheckBtn")?.addEventListener("click", ()=>{
+  const region  = getVal("region") || "";
+  const car     = getVal("car") || "";
+  const pref    = getVal("pref") || "";
+  const apply   = getVal("apply") || "";
+  const plate   = getVal("plate") || "";
+  const now = new Date();
+  const dateStr = `${now.getFullYear()}年${now.getMonth()+1}月${now.getDate()}日`;
+  const shakoMeta = (typeof SHAKO_DATA_DATE !== "undefined") ? `車庫証明データ：${SHAKO_DATA_DATE}現在` : "";
+  const meta = [dateStr, region, car, pref, apply, plate, shakoMeta].filter(Boolean).join("　|　");
+  const el = document.getElementById("printMeta");
+  if(el) el.textContent = meta;
+  document.body.classList.add("print-with-checklist");
+  window.print();
+  document.body.classList.remove("print-with-checklist");
 });
 
 if(zipEl){
@@ -2513,11 +3091,19 @@ function msUpdateStatus(){
   if(resetBtn) resetBtn.textContent = msState.won?"😎":msState.gameOver?"😵":"😊";
 }
 
+function msCalcCellSize(cols){
+  const availW = Math.min(window.innerWidth, 700) - 40;
+  const boardFixed = 14; // border(3px×2) + padding(4px×2)
+  const gaps = (cols - 1) * 2;
+  const size = Math.floor((availW - boardFixed - gaps) / cols);
+  return Math.max(14, Math.min(30, size));
+}
+
 function msRenderBoard(){
-  const {rows, cols} = msState;
+  const {rows, cols, cellSize} = msState;
   const board = document.getElementById("msBoard");
   if(!board) return;
-  board.style.gridTemplateColumns = `repeat(${cols}, 30px)`;
+  board.style.gridTemplateColumns = `repeat(${cols}, ${cellSize}px)`;
   board.innerHTML="";
 
   for(let r=0; r<rows; r++){
@@ -2526,6 +3112,9 @@ function msRenderBoard(){
       const cell=document.createElement("div");
       cell.className="ms-cell";
       cell.dataset.r=r; cell.dataset.c=c;
+      cell.style.width  = cellSize+"px";
+      cell.style.height = cellSize+"px";
+      cell.style.fontSize = Math.max(9, Math.round(cellSize*0.5))+"px";
 
       if(msState.revealed[idx]){
         const v=msState.board[idx];
@@ -2547,11 +3136,22 @@ function msRenderBoard(){
 function msStartGame(){
   msStopTimer();
   const cfg=MS_CONFIGS[msState.diff];
+  const cellSize = msCalcCellSize(cfg.cols);
   Object.assign(msState, {rows:cfg.rows, cols:cfg.cols, mines:cfg.mines,
     board:[], revealed:[], flagged:[],
-    gameOver:false, won:false, started:false, timeElapsed:0});
+    gameOver:false, won:false, started:false, timeElapsed:0, cellSize});
   const msgEl=document.getElementById("msMessage");
   if(msgEl){ msgEl.style.display="none"; msgEl.textContent=""; msgEl.className="ms-message"; }
+
+  // 上級かつ小画面では横画面ヒントを表示
+  const hintEl=document.getElementById("msHintText");
+  if(hintEl){
+    const needLandscape = msState.diff==="hard" && window.innerWidth < 600;
+    hintEl.textContent = needLandscape
+      ? "上級は横画面推奨 📱↔️ ／ 長押し：旗を立てる"
+      : "左クリック：開く ／ 右クリック：旗 ／ スマホ長押し：旗";
+  }
+
   msRenderBoard();
   msUpdateStatus();
 }
@@ -2643,6 +3243,313 @@ document.querySelectorAll(".ms-diff-btn").forEach(btn=>{
     msStartGame();
   });
 });
+
+// 画面回転・リサイズ時にセルサイズを再計算
+window.addEventListener("resize", ()=>{
+  if(document.getElementById("pageGame")?.style.display!=="none"){
+    const newSize=msCalcCellSize(msState.cols);
+    if(newSize!==msState.cellSize){ msState.cellSize=newSize; msRenderBoard(); }
+  }
+});
+
+/** ========= 中古車ページ ========= **/
+const pageUsedCar       = document.getElementById("pageUsedCar");
+const usedCarBtn        = document.getElementById("usedCarBtn");
+const backToFeeFromUsed = document.getElementById("backToFeeFromUsed");
+const resetUsedBtn      = document.getElementById("resetUsedBtn");
+const ucForm            = document.getElementById("usedCarForm");
+const ucTotalEl         = document.getElementById("uc_totalYen");
+const ucNontaxEl        = document.getElementById("uc_nontaxYen");
+const ucStatusEl        = document.getElementById("uc_statusText");
+const ucRowsEl          = document.getElementById("uc_resultRows");
+const ucTbody           = document.getElementById("uc_resultTbody");
+
+function showUsedCarPage(){
+  pageFee.style.display     = "none";
+  pageUsedCar.style.display = "block";
+  document.body.style.background = "#FFF3EC";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+function showFeePageFromUsed(){
+  pageUsedCar.style.display = "none";
+  pageFee.style.display     = "block";
+  document.body.style.background = "";
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+usedCarBtn?.addEventListener("click", showUsedCarPage);
+backToFeeFromUsed?.addEventListener("click", showFeePageFromUsed);
+resetUsedBtn?.addEventListener("click", ()=>{ ucForm?.reset(); calcUsedCar(); });
+
+function ucGetVal(name){
+  return ucForm?.querySelector(`input[name="${name}"]:checked`)?.value ?? "";
+}
+
+function ucUpdateUI(){
+  const dealer   = "シマダオート";
+  const car      = ucGetVal("uc_car");
+  const reg      = ucGetVal("uc_reg");
+  const trade    = ucGetVal("uc_trade");
+  const owner    = ucGetVal("uc_owner");
+  const plate    = ucGetVal("uc_plate");
+  const isGyohan = (car === "業販");
+
+  // 車種オプション: 柏木のみ業販あり・輸入なし
+  const importOpt = document.getElementById("uc_importOpt");
+  const gyohanOpt = document.getElementById("uc_gyohanOpt");
+  if(importOpt) importOpt.style.display = (dealer === "柏木") ? "none" : "";
+  if(gyohanOpt) gyohanOpt.style.display = (dealer === "柏木") ? "" : "none";
+  // ディーラー変更で選択無効化
+  if(dealer === "柏木" && car === "輸入"){
+    ucForm?.querySelectorAll('input[name="uc_car"]').forEach(r=>r.checked=false);
+  }
+  if(dealer !== "柏木" && car === "業販"){
+    ucForm?.querySelectorAll('input[name="uc_car"]').forEach(r=>r.checked=false);
+  }
+
+  // 業販では不要なセクションを非表示
+  const gyohanHideIds = ["uc_prefCard","uc_shakoCard","uc_regCard","uc_plateCard","uc_tradeCard","uc_lienCard","uc_outprefCard"];
+  gyohanHideIds.forEach(id=>{
+    const el = document.getElementById(id);
+    if(el) el.style.display = isGyohan ? "none" : "";
+  });
+
+  // 下取り Sub項目
+  const ucOwnerBox = document.getElementById("uc_ownerBox");
+  const ucLoanBox  = document.getElementById("uc_loanBox");
+  if(ucOwnerBox) ucOwnerBox.style.display = (trade === "あり") ? "" : "none";
+  if(ucLoanBox)  ucLoanBox.style.display  = (trade === "あり" && owner === "信販会社") ? "" : "none";
+
+  // 図柄ボックス
+  const ucPBox = document.getElementById("uc_patternBox");
+  if(ucPBox){
+    const needPat = (plate === "希望図柄番号");
+    ucPBox.classList.toggle("disabled", !needPat);
+    if(!needPat){
+      ucForm?.querySelectorAll('input[name="uc_pattern"], input[name="uc_patternColor"]').forEach(r=>r.checked=false);
+    }
+  }
+
+  // 登録予定年月・車検満了年月カードの表示制御
+  const ucRegMonthCard = document.getElementById("uc_regMonthCard");
+  const ucShokenCard   = document.getElementById("uc_shokenCard");
+  if(isGyohan){
+    if(ucRegMonthCard) ucRegMonthCard.style.display = "none";
+    if(ucShokenCard)   ucShokenCard.style.display   = "none";
+  } else {
+    if(ucRegMonthCard) ucRegMonthCard.style.display = (car !== "軽" || reg === "移転登録") ? "" : "none";
+    if(ucShokenCard)   ucShokenCard.style.display   = (reg === "移転登録") ? "" : "none";
+  }
+}
+
+function calcUsedCar(){
+  ucUpdateUI();
+  const dealer       = "シマダオート";
+  const car          = ucGetVal("uc_car");
+  const pref         = ucGetVal("uc_pref");
+  const shako        = ucGetVal("uc_shako");
+  const reg          = ucGetVal("uc_reg");
+  const plate        = ucGetVal("uc_plate");
+  const pattern      = ucGetVal("uc_pattern");
+  const patternColor = ucGetVal("uc_patternColor");
+  const trade        = ucGetVal("uc_trade");
+  const owner        = ucGetVal("uc_owner");
+  const loan         = ucGetVal("uc_loan");
+  const lien         = ucGetVal("uc_lien");
+  const outpref      = ucGetVal("uc_outpref");
+  const delivery     = ucGetVal("uc_delivery");
+  const isGyohan     = (car === "業販");
+  const typeKey      = (car === "軽") ? "軽四" : "小型";
+
+  // 必須チェック
+  const required = ["uc_car"];
+  if(!isGyohan){
+    required.push("uc_pref","uc_shako","uc_reg","uc_plate","uc_trade","uc_lien","uc_outpref","uc_delivery");
+    if(plate === "希望図柄番号") required.push("uc_pattern","uc_patternColor");
+  }
+  if(trade === "あり") required.push("uc_owner");
+  if(trade === "あり" && owner === "信販会社") required.push("uc_loan");
+  const missing = required.filter(k => !ucGetVal(k));
+  if(ucStatusEl){
+    if(missing.length){
+      ucStatusEl.textContent = "未選択があります（必須項目を選択してください）";
+      ucStatusEl.style.color = "#b00020";
+    } else {
+      ucStatusEl.textContent = "計算OK";
+      ucStatusEl.style.color = "#1b7f2a";
+    }
+  }
+
+  const rows = [];
+  const push = (label, yen, note="", taxable=true) => rows.push({label, yen: Number(yen||0), note, taxable});
+
+  if(isGyohan){
+    // 柏木 業販のみ
+    push("書類準備費用", UC_DOCS_PREP, "柏木業販", true);
+    push("納車費用（奈良県回送）", delivery === "店頭" ? 0 : UC_DELIVERY, delivery === "店頭" ? "店頭納車" : "", true);
+  } else {
+    // ── 課税分 ──
+    const regFee = UC_REG_FEE[dealer]?.[car] ?? null;
+    push("検査登録届出代行費用", regFee ?? 0, regFee == null ? "（設定なし）" : `${dealer}・${car}`, true);
+
+    if(shako === "必要"){
+      const shakoFee = UC_SHAKO_FEE[dealer]?.[car] ?? null;
+      push("車庫手続費用", shakoFee ?? 0, shakoFee == null ? "（設定なし）" : `${dealer}・${car}`, true);
+    }
+
+    if(reg === "中古新規"){
+      const insFee = UC_INSPECTION_FEE[dealer]?.[car] ?? null;
+      push("車検代行費", insFee ?? 0, insFee == null ? "（設定なし）" : `${dealer}・${car}`, true);
+    }
+
+    if(plate === "字光式一般" || plate === "字光式希望"){
+      const jikouFee = UC_JIKOU_TOOL[dealer]?.[car] ?? 0;
+      push("字光式器具代（工込）", jikouFee, `${dealer}・${car}`, true);
+    }
+
+    if(plate === "希望番号"){
+      const hopeFee = UC_HOPE_FEE[dealer]?.[car] ?? 0;
+      push("希望番号代行費用", hopeFee, `${dealer}・${car}`, true);
+    } else if(plate === "希望図柄番号"){
+      const dFee = UC_DESIGN_FEE[dealer]?.[car] ?? 0;
+      push("希望図柄番号代行費用", dFee, `${dealer}・${car}`, true);
+    }
+
+    if(plate === "希望図柄番号" && patternColor === "カラー"){
+      push("図柄寄付金（カラー）", PATTERN_DONATION, "", true);
+    }
+
+    push("納車費用（奈良県回送）", delivery === "店頭" ? 0 : UC_DELIVERY, delivery === "店頭" ? "店頭納車" : "", true);
+
+    if(outpref === "あり") push("他府県登録（店頭納車）", UC_OUT_PREF, "", true);
+
+    if(lien === "あり"){
+      const lienFee = UC_LIEN_FEE[dealer]?.[car] ?? 0;
+      push("所有権留保手数料（キンキ所有権）", lienFee, `${dealer}・${car}`, true);
+    }
+
+    if(trade === "あり"){
+      const tradeFee = UC_TRADEIN_FEE[dealer]?.[car] ?? 0;
+      push("下取車手続代行費用（所有権解除）", tradeFee, `${dealer}・${car}`, true);
+      if(owner === "信販会社" && loan === "あり") push("残債処理手数料", LOAN_FEE, "", true);
+    }
+
+    // ── 非課税分 ──
+    // 車庫証明証紙代（必要・不要に関わらず常に表示）
+    const shoshi = (shako === "必要") ? (SHAKO_SHOSHI?.["書類代行"]?.[pref]?.[typeKey] ?? 0) : 0;
+    push("車庫証明証紙代", shoshi, shako === "不要" ? "不要" : `${pref}`, false);
+
+    const stampFee      = UC_STAMP[reg]?.[typeKey] ?? 0;
+    const plateRowPaint = PLATE_PAINT?.[typeKey]?.[pref] ?? null;
+    const plateRowJikou = PLATE_JIKOU?.[typeKey]?.[pref] ?? null;
+
+    // ナンバー代・登録証紙代を常に1行合算（備考に内訳）
+    const stampNote = reg === "中古新規" ? `${reg}（審査証紙＋登録証紙）` : reg;
+    if(plate === "番号変更なし"){
+      push("登録証紙代", stampFee, stampNote, false);
+    } else if(plate === "一般番号"){
+      const pCost = plateRowPaint?.["一般番号"] ?? 0;
+      push("ナンバー代・登録証紙代", pCost + stampFee,
+        `ナンバー代${yenFmt(pCost)}＋登録証紙${yenFmt(stampFee)}`, false);
+    } else if(plate === "希望番号"){
+      const hopePlateFee = plateRowPaint?.["希望番号"] ?? 0;
+      push("ナンバー代・登録証紙代", hopePlateFee + stampFee,
+        `希望ナンバー申請費${yenFmt(hopePlateFee)}＋登録証紙${yenFmt(stampFee)}`, false);
+    } else if(plate === "希望図柄番号"){
+      const patKey = pattern || "全国図柄";
+      const designPlateFee = plateRowPaint?.[patKey] ?? 0;
+      push("ナンバー代・登録証紙代", designPlateFee + stampFee,
+        `${patKey}申請費${yenFmt(designPlateFee)}＋登録証紙${yenFmt(stampFee)}`, false);
+    } else if(plate === "字光式一般"){
+      const jp = plateRowJikou?.["一般番号"] ?? 0;
+      push("ナンバー代・登録証紙代（字光式）", jp + stampFee,
+        `字光式ナンバー代${yenFmt(jp)}＋登録証紙${yenFmt(stampFee)}`, false);
+    } else if(plate === "字光式希望"){
+      const jph = plateRowJikou?.["希望番号"] ?? 0;
+      push("ナンバー代・登録証紙代（字光式希望）", jph + stampFee,
+        `字光式希望ナンバー代${yenFmt(jph)}＋登録証紙${yenFmt(stampFee)}`, false);
+    }
+
+    if(trade === "あり") push("下取車諸手続", TRADEIN_PROC, "", false);
+  }
+
+  // 合計
+  const taxRows    = rows.filter(r=>r.taxable);
+  const nontaxRows = rows.filter(r=>!r.taxable);
+  const taxSum  = taxRows.reduce((a,b)=>a+b.yen,0);
+  const nonSum  = nontaxRows.reduce((a,b)=>a+b.yen,0);
+  if(ucTotalEl)  ucTotalEl.textContent  = yenFmt(taxSum + nonSum);
+  if(ucNontaxEl) ucNontaxEl.textContent = yenFmt(nonSum);
+
+  // 参考計算：自動車税・自賠責 未経過月
+  const regMonth    = parseInt(ucForm?.querySelector('[name="uc_regMonth"]')?.value  || "0");
+  const regYear     = parseInt(ucForm?.querySelector('[name="uc_regYear"]')?.value   || "0");
+  const shokenMonth = parseInt(ucForm?.querySelector('[name="uc_shokenMonth"]')?.value || "0");
+  const shokenYear  = parseInt(ucForm?.querySelector('[name="uc_shokenYear"]')?.value  || "0");
+  const refBox      = document.getElementById("uc_refCalcBox");
+  const jidouRow    = document.getElementById("uc_jidouTaxRow");
+  const jidouEl     = document.getElementById("uc_jidouTaxMonths");
+  const jibaiRow    = document.getElementById("uc_jibaiRow");
+  const jibaiEl     = document.getElementById("uc_jibaiMonths");
+  let showRef = false;
+
+  // 自動車税未経過月（軽以外・登録月が入力済みの場合）
+  if(!isGyohan && car !== "軽" && regMonth > 0){
+    const m = regMonth <= 3 ? (3 - regMonth) : (15 - regMonth);
+    if(jidouRow) jidouRow.style.display = "";
+    if(jidouEl)  jidouEl.textContent = `${m} か月`;
+    showRef = true;
+  } else {
+    if(jidouRow) jidouRow.style.display = "none";
+  }
+
+  // 自賠責保険未経過月（移転登録・全項目入力済みの場合）
+  if(!isGyohan && reg === "移転登録" && regMonth > 0 && regYear > 0 && shokenMonth > 0 && shokenYear > 0){
+    const endMonth = shokenMonth;
+    const endYear  = shokenYear;
+    const m = Math.max(0, (endYear * 12 + endMonth) - (regYear * 12 + regMonth) + 1);
+    if(jibaiRow) jibaiRow.style.display = "";
+    if(jibaiEl)  jibaiEl.textContent = `${m} か月`;
+    showRef = true;
+  } else {
+    if(jibaiRow) jibaiRow.style.display = "none";
+  }
+
+  if(refBox) refBox.style.display = showRef ? "" : "none";
+
+  // Mobile cards
+  let html = "";
+  html += buildSection("課税分");
+  taxRows.forEach(r=> html += buildRowCard(r.label, r.yen, r.note));
+  html += buildSub("課税分小計", taxSum);
+  if(nontaxRows.length){
+    html += buildSection("非課税分");
+    nontaxRows.forEach(r=> html += buildRowCard(r.label, r.yen, r.note));
+    html += buildSub("非課税分小計", nonSum);
+  }
+  if(ucRowsEl) ucRowsEl.innerHTML = html;
+
+  // Desktop table
+  if(ucTbody){
+    ucTbody.innerHTML = "";
+    const ucAddSec = t=> ucTbody.insertAdjacentHTML("beforeend",
+      `<tr><td colspan="3" style="background:#f3f6ff;font-weight:900;">${escapeHtml(t)}</td></tr>`);
+    const ucAddTr  = (l,y,n)=> ucTbody.insertAdjacentHTML("beforeend",
+      `<tr><td>${escapeHtml(l)}</td><td class="yen">${y?yenFmt(y):"-"}</td><td>${escapeHtml(n||"")}</td></tr>`);
+    const ucAddSub = (t,y)=> ucTbody.insertAdjacentHTML("beforeend",
+      `<tr><td style="background:#e8f1ff;font-weight:900;">${escapeHtml(t)}</td><td class="yen" style="background:#e8f1ff;font-weight:900;">${yenFmt(y)}</td><td style="background:#e8f1ff;"></td></tr>`);
+    ucAddSec("課税分");
+    taxRows.forEach(r=> ucAddTr(r.label, r.yen, r.note));
+    ucAddSub("課税分小計", taxSum);
+    if(nontaxRows.length){
+      ucAddSec("非課税分");
+      nontaxRows.forEach(r=> ucAddTr(r.label, r.yen, r.note));
+      ucAddSub("非課税分小計", nonSum);
+    }
+  }
+}
+
+ucForm?.addEventListener("change", calcUsedCar);
+calcUsedCar();
 
 </script>
 </body>
